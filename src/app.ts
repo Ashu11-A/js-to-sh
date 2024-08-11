@@ -7,6 +7,5 @@ const files = await glob(['**/*.ts'], { cwd: join(process.cwd(), 'src/connects')
 for (const file of files) {
   const path = join(process.cwd(), 'src/connects', file)
   const transform = new Transform({ path })
-  const ast = await transform.loader(path)
-  transform.parser(ast)
+  transform.parser(await transform.loader(path))
 }

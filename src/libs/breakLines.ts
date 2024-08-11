@@ -1,8 +1,8 @@
 
 /**
- * Quebra em linhas um array
- * Caso a linha esteja vazia pule
- * Caso seja o ultimo elemento da array, não quebre a linha
+ * Quebra um array em linhas
+ * Caso a linha esteja vazia, pule!
+ * Caso seja o ultimo elemento da array, não quebre a linha.
  *
  * @export
  * @param {string[]} array

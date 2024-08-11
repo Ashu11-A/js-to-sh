@@ -1,6 +1,6 @@
 
 /**
- * Retorna o indent para melhor formatação do shell script
+ * Retorna o indent para melhor formatação no shell script
  *
  * @export
  * @param {number} tabs

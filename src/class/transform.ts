@@ -1,14 +1,10 @@
 import AbstractSyntaxTree from 'abstract-syntax-tree'
 import { writeFileSync } from 'fs'
 import { readFile } from 'fs/promises'
-import { _Node, BinaryExpression, ImportDeclaration, ReturnStatement, CallExpression, DeclarationStatement, Expression, ExpressionStatement, FunctionDeclaration, Identifier, Literal, MemberExpression, Statement, SwitchStatement } from '../../node_modules/meriyah/src/estree'
+import { BinaryExpression, ImportDeclaration, ReturnStatement, CallExpression, DeclarationStatement, Expression, ExpressionStatement, FunctionDeclaration, Identifier, Literal, MemberExpression, Statement, SwitchStatement } from '../../node_modules/meriyah/src/estree'
 import { breakLines } from '../libs/breakLines'
 import { getTabs } from '../libs/getTabs'
 import { join } from 'path'
-
-interface AST extends _Node {
-    body: (Statement)[]
-}
 
 interface TransformOptions {
     path: string
@@ -29,9 +25,9 @@ export class Transform {
    *
    * @async
    * @param {string} path
-   * @returns {Promise<AST>}
+   * @returns {Promise<(Statement | DeclarationStatement)>}
    */
-  async loader (path: string): Promise<AST> {
+  async loader (path: string): Promise<(Statement | DeclarationStatement)> {
     const code = await readFile(path, { encoding: 'utf-8' })
     return new AbstractSyntaxTree(code)
   }
