@@ -15,7 +15,7 @@
 
 ## 📃 | Description
 
-With a deficit in the generation of high-performance and maintainable shell scripts, I decided to create this project.
-Of course, it's still in development, and for now it's just a huge workaround, but I hope I don't leave technical divides behind!
+With a deficit in generating high-performance, easy-to-maintain shell scripts, I decided to create this project.
+Of course, it's still in development and, for the time being, it's just a big improvisation, but I hope I don't leave any bugs behind!
 
 </div>
