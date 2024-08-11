@@ -3,9 +3,10 @@ import { writeFileSync } from 'fs'
 import { readFile } from 'fs/promises'
 import { _Node, SwitchStatement, BinaryExpression, CallExpression, Expression, ExpressionStatement, FunctionDeclaration, Identifier, IfStatement, Literal, MemberExpression, Statement } from '../../node_modules/meriyah/src/estree'
 import { getTabs } from '../libs/getTabs'
+import { breakLines } from '../libs/breakLines'
 
 interface AST extends _Node {
-    body: (Expression | Statement)[]
+    body: (Statement)[]
 }
 
 interface TransformOptions {
@@ -21,6 +22,14 @@ export class Transform {
     this.path = path
   }
 
+  
+  /**
+   * Carrega o AST do javascript, gera um json com todas as informações necessarias para a conversão para shell script
+   *
+   * @async
+   * @param {string} path
+   * @returns {Promise<AST>}
+   */
   async loader (path: string): Promise<AST> {
     const code = await readFile(path, { encoding: 'utf-8' })
     return new AbstractSyntaxTree(code)
@@ -99,10 +108,16 @@ export class Transform {
       }
       case 'IfStatement': {
         this.numberIfs = this.numberIfs + 1
-        script.push(`\nif [[ ${this.parseExpression(node.test)} ]]; then`)
-        script.push(...(this.parser(node.consequent)).map((text) => `${getTabs(this.numberIfs)}${text}`))
-        script.push('fi\n')
-        this.numberIfs = 0
+        const test = this.parseExpression(node.test)
+        const consequent = this.parser(node.consequent)
+        const alternate = node.alternate ? this.parseElseStatement(node.alternate) : ''
+
+        script.push(`if [ ${test} ]; then`)
+        script.push(`${breakLines(consequent.map(content => `${getTabs(this.numberIfs)}${content}`).filter((content) => content.length === 0 ? false : true))}`)
+        if (alternate.length > 0) script.push(alternate)
+        script.push('fi')
+        
+        this.numberIfs = 1
         break
       }
       case 'DoWhileStatement':
@@ -153,17 +168,25 @@ export class Transform {
       }
     }
 
-    writeFileSync('test.sh', script.join('\n'))
+    writeFileSync('test.sh', breakLines(script))
     if (Array.isArray(ast?.body)) {
       for (const node of ast.body) {
         process(node)
         writeFileSync('test.json', JSON.stringify(ast, null, 2))
       }
     }
-    writeFileSync('test.sh', script.join('\n'))
+    writeFileSync('test.sh', breakLines(script))
     return script
   }
 
+  
+  /**
+   * Formata valores Primarios que são usados no parse principal
+   *
+   * @template T
+   * @param {Expression} expression
+   * @returns {(T | undefined)}
+   */
   parseExpression<T>(expression: Expression): T | undefined {
     switch (expression.type) {
     case 'ArrowFunctionExpression':
@@ -226,7 +249,14 @@ export class Transform {
     }
   }
 
-  parseOperator (value: string) {
+  
+  /**
+   * Retorna o operador equivalente do javascript para o shell script
+   *
+   * @param {string} value
+   * @returns {string}
+   */
+  parseOperator (value: string): string {
     return (value === '===' || value === '==')
       ? '='
       : ['!==', '!='].includes(value)
@@ -240,5 +270,19 @@ export class Transform {
               : value === '<=' 
                 ? '-le'
                 : value
+  }
+
+  /**
+   * Usado para pegar recursivamente todos os else do javascript
+   * @param node 
+   * @returns 
+   */
+  parseElseStatement (node: IfStatement) {
+    const content: string[] = []
+    content.push(`elif [ ${this.parseExpression(node.test)} ]; then`)
+    content.push(`${getTabs(this.numberIfs)}${this.parser(node.consequent)}`)
+
+    if (node.alternate) content.push(this.parseElseStatement(node.alternate))
+    return breakLines(content)
   }
 }

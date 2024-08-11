@@ -1,6 +1,13 @@
-function some (num1, num2) {
-  return num1 + num2
-}
+const isTrue = true
+const isFalse = false
 
-const result = some(1, 3)
-console.log(result)
+if (isFalse === isTrue) {
+  console.log('isFalse é diferente de isTrue')
+  if ('test' === 'test') {
+    console.log('test é test')
+  }
+} else if (isFalse === isTrue) {
+  console.log('isFalse é igual a isTrue')
+} else if (true === true) {
+  console.log('true é true')
+}

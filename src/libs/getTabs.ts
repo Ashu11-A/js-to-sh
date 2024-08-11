@@ -1,8 +1,11 @@
-export function getTabs (tabs: number) {
-  let tab = ''
-  for (let int = 0; int < tabs; int++) {
-    tab += '  '
-  }
 
-  return tab
+/**
+ * Retorna o indent para melhor formatação do shell script
+ *
+ * @export
+ * @param {number} tabs
+ * @returns {*}
+ */
+export function getTabs (tabs: number) {
+  return '  '.repeat(tabs)
 }
