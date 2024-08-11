@@ -3,13 +3,15 @@ const b = 'test'
 
 if (a === 'test') {
   console.log('Hello world')
-} else if (b === 'test') {
-  console.log('twuHBD')
 }
 
 switch (a) {
 case 'test': {
   console.log(b)
+  break
+}
+case 'as': {
+  console.log('ehhe')
 }
 }
 

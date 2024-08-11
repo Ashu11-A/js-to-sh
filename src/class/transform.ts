@@ -1,7 +1,7 @@
 import AbstractSyntaxTree from 'abstract-syntax-tree'
 import { writeFileSync } from 'fs'
 import { readFile } from 'fs/promises'
-import { _Node, BinaryExpression, CallExpression, Expression, ExpressionStatement, Identifier, IfStatement, Literal, MemberExpression, Statement } from '../../node_modules/meriyah/src/estree'
+import { _Node, SwitchStatement, BinaryExpression, CallExpression, Expression, ExpressionStatement, Identifier, IfStatement, Literal, MemberExpression, Statement } from '../../node_modules/meriyah/src/estree'
 import { getTabs } from '../libs/getTabs'
 
 interface AST extends _Node {
@@ -31,56 +31,17 @@ export class Transform {
 
     const process = (node: Expression | Statement) => {
       switch (node.type) {
-      case 'ArrowFunctionExpression':
-      case 'AssignmentExpression':
       case 'BinaryExpression': {
         const module = (node as BinaryExpression)
-        const left = (module.left as Identifier).name
-        const right = (module.right as Literal).value
-        // const operator = module.operator
+        const left = this.parseExpression<string>(module.left)
+        const right = this.parseExpression<string>(module.right)
+        const operator = this.parseOperator(module.operator)
           
-        script.push(`\nif [[ "$\{${left}}" == "${right}" ]]; then`)
+        script.push(`\nif [[ "$\{${left}}" ${operator} "${right}" ]]; then`)
         script.push(...(this.parser({ body: (absoluteAST as IfStatement).consequent.body })).map((text) => `${getTabs(this.numberIfs)}${text}`))
         script.push('fi\n')
         break
       }
-      case 'ConditionalExpression':
-      case 'MetaProperty':
-      case 'ChainExpression':
-      case 'JSXClosingElement':
-      case 'JSXClosingFragment':
-      case 'JSXExpressionContainer':
-      case 'JSXOpeningElement':
-      case 'JSXOpeningFragment':
-      case 'JSXSpreadChild':
-      case 'LogicalExpression':
-      case 'NewExpression':
-      case 'RestElement':
-      case 'SequenceExpression':
-      case 'SpreadElement':
-      case 'AwaitExpression':
-      case 'CallExpression':
-      case 'ImportExpression':
-      case 'ClassExpression':
-      case 'ClassDeclaration':
-      case 'FunctionExpression':
-      case 'Literal':
-      case 'TemplateLiteral':
-      case 'MemberExpression':
-      case 'ArrayExpression':
-      case 'ArrayPattern':
-      case 'Identifier':
-      case 'Import':
-      case 'JSXElement':
-      case 'JSXFragment':
-      case 'ObjectExpression':
-      case 'ObjectPattern':
-      case 'Super':
-      case 'ThisExpression':
-      case 'TaggedTemplateExpression':
-      case 'UnaryExpression':
-      case 'UpdateExpression':
-      case 'YieldExpression':
       case 'BlockStatement':
       case 'BreakStatement':
       case 'ContinueStatement':
@@ -92,7 +53,8 @@ export class Transform {
       case 'EmptyStatement':
       case 'ExpressionStatement': {
         const expression = (node as ExpressionStatement).expression as CallExpression
-        
+        if (expression === undefined) return script
+
         switch (expression.type) {
         case 'CallExpression': {
           const callee = (expression as CallExpression).callee
@@ -129,7 +91,6 @@ export class Transform {
         switch (node.test.type) {
         case 'ClassDeclaration':
         case 'ClassExpression':
-        case 'ArrowFunctionExpression':
         case 'AssignmentExpression':
         case 'BinaryExpression': { script.push(...this.parser({ body: [node.test] }, node)); break}
         case 'ConditionalExpression':
@@ -180,6 +141,22 @@ export class Transform {
       case 'LabeledStatement':
       case 'ReturnStatement':
       case 'SwitchStatement': {
+        const module = (node as SwitchStatement)
+        const discriminant = this.parseExpression<string>(module.discriminant)
+        script.push(`case $${discriminant} in`)
+
+        for (const caseNode of module.cases) {
+          if (caseNode.test) {
+            const testValue = this.parseExpression(caseNode.test)
+            script.push(`  "${testValue}")\n`)
+          } else {
+            script.push('  *)\n)')
+          }
+          console.log(caseNode.consequent)
+          script.push('    ' + this.parser(...caseNode.consequent).join('\n') + '\n')
+          script.push('    ;;')
+        }
+        script.push('esac\n')
         console.log(ast.body)
 
         break
@@ -204,8 +181,73 @@ export class Transform {
         writeFileSync('test.json', JSON.stringify(ast, null, 2))
       }
     }
-
+    console.log(script.join('\n'))
     writeFileSync('test.sh', script.join('\n'))
     return script
+  }
+
+  parseExpression<T>(expression: Expression): T | undefined {
+    switch (expression.type) {
+    case 'ArrowFunctionExpression':
+    case 'AssignmentExpression':
+    case 'BinaryExpression':
+    case 'ConditionalExpression':
+    case 'MetaProperty':
+    case 'ChainExpression':
+    case 'JSXClosingElement':
+    case 'JSXClosingFragment':
+    case 'JSXExpressionContainer':
+    case 'JSXOpeningElement':
+    case 'JSXOpeningFragment':
+    case 'JSXSpreadChild':
+    case 'LogicalExpression':
+    case 'NewExpression':
+    case 'RestElement':
+    case 'SequenceExpression':
+    case 'SpreadElement':
+    case 'AwaitExpression':
+    case 'CallExpression':
+    case 'ImportExpression':
+    case 'ClassExpression':
+    case 'ClassDeclaration':
+    case 'FunctionExpression':
+    case 'Literal': {
+      return (expression as Literal).value as T
+    }
+    case 'TemplateLiteral':
+    case 'MemberExpression':
+    case 'ArrayExpression':
+    case 'ArrayPattern':
+    case 'Identifier': {
+      return (expression as Identifier).name as T
+    }
+    case 'Import':
+    case 'JSXElement':
+    case 'JSXFragment':
+    case 'ObjectExpression':
+    case 'ObjectPattern':
+    case 'Super':
+    case 'ThisExpression':
+    case 'TaggedTemplateExpression':
+    case 'UnaryExpression':
+    case 'UpdateExpression':
+    case 'YieldExpression':
+    }
+  }
+
+  parseOperator (value: string) {
+    return (value === '===' || value === '==')
+      ? '='
+      : ['!==', '!='].includes(value)
+        ? '!='
+        : value === '>' 
+          ? '-gt'
+          : value === '>='
+            ? '-ge'
+            : value === '<' 
+              ? '-lt'
+              : value === '<=' 
+                ? '-le'
+                : value
   }
 }
