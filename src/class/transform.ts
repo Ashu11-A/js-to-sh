@@ -1,9 +1,9 @@
 import AbstractSyntaxTree from 'abstract-syntax-tree'
 import { writeFileSync } from 'fs'
 import { readFile } from 'fs/promises'
-import { _Node, SwitchStatement, BinaryExpression, CallExpression, Expression, ExpressionStatement, FunctionDeclaration, Identifier, IfStatement, Literal, MemberExpression, Statement } from '../../node_modules/meriyah/src/estree'
-import { getTabs } from '../libs/getTabs'
+import { _Node, BinaryExpression, ReturnStatement, CallExpression, DeclarationStatement, Expression, ExpressionStatement, FunctionDeclaration, Identifier, Literal, MemberExpression, Statement, SwitchStatement } from '../../node_modules/meriyah/src/estree'
 import { breakLines } from '../libs/breakLines'
+import { getTabs } from '../libs/getTabs'
 
 interface AST extends _Node {
     body: (Statement)[]
@@ -35,9 +35,9 @@ export class Transform {
     return new AbstractSyntaxTree(code)
   }
 
-  parser (ast: AST) {
+  parser (ast?: (Statement | DeclarationStatement) | null) {
     const script: string[] = []
-    if (ast === undefined) return script
+    if (ast === undefined || ast === null) return script
 
     const process = (node: Expression | Statement) => {
       switch (node.type) {
@@ -59,7 +59,7 @@ export class Transform {
 
         const module = (node as FunctionDeclaration)
         const functionName = module.id?.name
-        const params = module.params?.map(param => param.name) as string[]
+        const params = (module.params as Identifier[]).map(param => param.name) as string[]
 
         script.push(`${functionName}() {`)
         for (const [index, param] of Object.entries(params)) {
@@ -128,7 +128,7 @@ export class Transform {
       case 'ImportDeclaration':
       case 'LabeledStatement':
       case 'ReturnStatement': {
-        script.push(`echo $(( ${this.parseExpression(node.argument)} ))`)
+        script.push(`echo $(( ${this.parseExpression((node as ReturnStatement).argument)} ))`)
         break
       }
       case 'SwitchStatement': {
@@ -187,7 +187,8 @@ export class Transform {
    * @param {Expression} expression
    * @returns {(T | undefined)}
    */
-  parseExpression<T>(expression: Expression): T | undefined {
+  parseExpression<T>(expression: Expression | null): T | undefined {
+    if (expression === null) return
     switch (expression.type) {
     case 'ArrowFunctionExpression':
     case 'AssignmentExpression':
@@ -277,7 +278,8 @@ export class Transform {
    * @param node 
    * @returns 
    */
-  parseElseStatement (node: IfStatement) {
+  parseElseStatement (node: Statement) {
+    if (node.type !== 'IfStatement') return ''
     const content: string[] = []
     content.push(`elif [ ${this.parseExpression(node.test)} ]; then`)
     content.push(`${getTabs(this.numberIfs)}${this.parser(node.consequent)}`)
