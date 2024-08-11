@@ -1,9 +1,10 @@
 import AbstractSyntaxTree from 'abstract-syntax-tree'
 import { writeFileSync } from 'fs'
 import { readFile } from 'fs/promises'
-import { _Node, BinaryExpression, ReturnStatement, CallExpression, DeclarationStatement, Expression, ExpressionStatement, FunctionDeclaration, Identifier, Literal, MemberExpression, Statement, SwitchStatement } from '../../node_modules/meriyah/src/estree'
+import { _Node, BinaryExpression, ImportDeclaration, ReturnStatement, CallExpression, DeclarationStatement, Expression, ExpressionStatement, FunctionDeclaration, Identifier, Literal, MemberExpression, Statement, SwitchStatement } from '../../node_modules/meriyah/src/estree'
 import { breakLines } from '../libs/breakLines'
 import { getTabs } from '../libs/getTabs'
+import { join } from 'path'
 
 interface AST extends _Node {
     body: (Statement)[]
@@ -39,7 +40,7 @@ export class Transform {
     const script: string[] = []
     if (ast === undefined || ast === null) return script
 
-    const process = (node: Expression | Statement) => {
+    const runProcess = (node: Expression | Statement) => {
       switch (node.type) {
       case 'BlockStatement': {
         for (const statement of node.body) {
@@ -47,12 +48,24 @@ export class Transform {
         }
         break
       }
-      case 'BreakStatement':
-      case 'ContinueStatement':
-      case 'DebuggerStatement':
-      case 'ExportDefaultDeclaration':
-      case 'ExportAllDeclaration':
-      case 'ExportNamedDeclaration':
+      case 'BreakStatement': {
+        break
+      }
+      case 'ContinueStatement': {
+        break
+      }
+      case 'DebuggerStatement': {
+        break
+      }
+      case 'ExportDefaultDeclaration': {
+        break
+      }
+      case 'ExportAllDeclaration': {
+        break
+      }
+      case 'ExportNamedDeclaration': {
+        break
+      }
       case 'FunctionDeclaration': {
         if (node.type !== 'FunctionDeclaration') return
         this.numberFuncts = this.numberFuncts + 1
@@ -70,7 +83,9 @@ export class Transform {
         script.push(getTabs(this.numberFuncts) + '}\n')
         break
       }
-      case 'EmptyStatement':
+      case 'EmptyStatement': {
+        break
+      }
       case 'ExpressionStatement': {
         const expression = (node as ExpressionStatement).expression as CallExpression
         if (expression === undefined) return script
@@ -112,7 +127,9 @@ export class Transform {
         const consequent = this.parser(node.consequent)
         const alternate = node.alternate ? this.parseElseStatement(node.alternate) : ''
 
-        script.push(`if [ ${test} ]; then`)
+        console.log(test)
+
+        script.push(`if ${test}; then`)
         script.push(`${breakLines(consequent.map(content => `${getTabs(this.numberIfs)}${content}`).filter((content) => content.length === 0 ? false : true))}`)
         if (alternate.length > 0) script.push(alternate)
         script.push('fi')
@@ -120,13 +137,31 @@ export class Transform {
         this.numberIfs = 1
         break
       }
-      case 'DoWhileStatement':
-      case 'ForInStatement':
-      case 'ForOfStatement':
-      case 'ForStatement':
-      case 'WhileStatement':
-      case 'ImportDeclaration':
-      case 'LabeledStatement':
+      case 'DoWhileStatement': {
+        break
+      }
+      case 'ForInStatement': {
+        break
+      }
+      case 'ForOfStatement': {
+        break
+      }
+      case 'ForStatement': {
+        break
+      }
+      case 'WhileStatement': {
+        break
+      }
+      case 'ImportDeclaration': {
+        const module = (node as ImportDeclaration)
+        const path = join(process.cwd(), 'src', `${(this.parseExpression<string>(module.source) as string).replace('../', '').replace('javascript', 'shellscript')}.sh`)
+
+        script.push(`source ${path}`)
+        break
+      }
+      case 'LabeledStatement': {
+        break
+      }
       case 'ReturnStatement': {
         script.push(`echo $(( ${this.parseExpression((node as ReturnStatement).argument)} ))`)
         break
@@ -150,8 +185,12 @@ export class Transform {
 
         break
       }
-      case 'ThrowStatement':
-      case 'TryStatement':
+      case 'ThrowStatement':{
+        break
+      }
+      case 'TryStatement':{
+        break
+      }
       case 'VariableDeclaration': {
         if (node.type !== 'VariableDeclaration') break
         for (const variable of node.declarations) {
@@ -164,17 +203,19 @@ export class Transform {
         }
         break
       }
-      case 'WithStatement':
+      case 'WithStatement':{
+        break
+      }
       }
     }
 
-    writeFileSync('test.sh', breakLines(script))
     if (Array.isArray(ast?.body)) {
       for (const node of ast.body) {
-        process(node)
-        writeFileSync('test.json', JSON.stringify(ast, null, 2))
+        runProcess(node)
       }
     }
+
+    writeFileSync('test.json', JSON.stringify(ast, null, 2))
     writeFileSync('test.sh', breakLines(script))
     return script
   }
@@ -188,7 +229,8 @@ export class Transform {
    * @returns {(T | undefined)}
    */
   parseExpression<T>(expression: Expression | null): T | undefined {
-    if (expression === null) return
+    if (expression === null || expression === undefined) return
+
     switch (expression.type) {
     case 'ArrowFunctionExpression':
     case 'AssignmentExpression':
@@ -198,7 +240,7 @@ export class Transform {
       const right = this.parseExpression<string>(module.right)
       const operator = this.parseOperator(module.operator)
 
-      return `"$\{${left}}" ${operator} "$\{${right}}"` as T
+      return `[[ "$\{${left}}" ${operator} "$\{${right}} ]]"` as T
     }
     case 'ConditionalExpression':
     case 'MetaProperty':
@@ -220,7 +262,7 @@ export class Transform {
       const functionName = module.callee.name
       const args = module.arguments.map((arg) => this.parseExpression(arg)).join(' ')
 
-      return `$( ${functionName} ${args} )` as T
+      return `${functionName} $\{${args}}` as T
     }
     case 'ImportExpression':
     case 'ClassExpression':

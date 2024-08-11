@@ -1,0 +1,3 @@
+isExecutable() {
+  [ -x "$1" ]
+}

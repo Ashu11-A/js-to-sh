@@ -1,13 +1,7 @@
-const isTrue = true
-const isFalse = false
+import { isNumber } from '../transformers/javascript/isNumber'
 
-if (isFalse === isTrue) {
-  console.log('isFalse é diferente de isTrue')
-  if ('test' === 'test') {
-    console.log('test é test')
-  }
-} else if (isFalse === isTrue) {
-  console.log('isFalse é igual a isTrue')
-} else if (true === true) {
-  console.log('true é true')
+const num = 0
+
+if (isNumber(num)) {
+  console.log('é um numero')
 }
