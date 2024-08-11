@@ -1,18 +1,6 @@
-const a = 'test'
-const b = 'test'
-
-if (a === 'test') {
-  console.log('Hello world')
+function some (num1, num2) {
+  return num1 + num2
 }
 
-switch (a) {
-case 'test': {
-  console.log(b)
-  break
-}
-case 'as': {
-  console.log('ehhe')
-}
-}
-
-console.log(a)
+const result = some(1, 3)
+console.log(result)

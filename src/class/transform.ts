@@ -1,7 +1,7 @@
 import AbstractSyntaxTree from 'abstract-syntax-tree'
 import { writeFileSync } from 'fs'
 import { readFile } from 'fs/promises'
-import { _Node, SwitchStatement, BinaryExpression, CallExpression, Expression, ExpressionStatement, Identifier, IfStatement, Literal, MemberExpression, Statement } from '../../node_modules/meriyah/src/estree'
+import { _Node, SwitchStatement, BinaryExpression, CallExpression, Expression, ExpressionStatement, FunctionDeclaration, Identifier, IfStatement, Literal, MemberExpression, Statement } from '../../node_modules/meriyah/src/estree'
 import { getTabs } from '../libs/getTabs'
 
 interface AST extends _Node {
@@ -15,6 +15,7 @@ interface TransformOptions {
 export class Transform {
   private readonly path: string
   private numberIfs: number = 0
+  private numberFuncts: number = 0
 
   constructor ({ path }: TransformOptions) {
     this.path = path
@@ -25,31 +26,41 @@ export class Transform {
     return new AbstractSyntaxTree(code)
   }
 
-  parser (ast: AST, absoluteAST?: (Expression | Statement)) {
+  parser (ast: AST) {
     const script: string[] = []
     if (ast === undefined) return script
 
     const process = (node: Expression | Statement) => {
       switch (node.type) {
-      case 'BinaryExpression': {
-        const module = (node as BinaryExpression)
-        const left = this.parseExpression<string>(module.left)
-        const right = this.parseExpression<string>(module.right)
-        const operator = this.parseOperator(module.operator)
-          
-        script.push(`\nif [[ "$\{${left}}" ${operator} "${right}" ]]; then`)
-        script.push(...(this.parser({ body: (absoluteAST as IfStatement).consequent.body })).map((text) => `${getTabs(this.numberIfs)}${text}`))
-        script.push('fi\n')
+      case 'BlockStatement': {
+        for (const statement of node.body) {
+          this.parser(statement)
+        }
         break
       }
-      case 'BlockStatement':
       case 'BreakStatement':
       case 'ContinueStatement':
       case 'DebuggerStatement':
       case 'ExportDefaultDeclaration':
       case 'ExportAllDeclaration':
       case 'ExportNamedDeclaration':
-      case 'FunctionDeclaration':
+      case 'FunctionDeclaration': {
+        if (node.type !== 'FunctionDeclaration') return
+        this.numberFuncts = this.numberFuncts + 1
+
+        const module = (node as FunctionDeclaration)
+        const functionName = module.id?.name
+        const params = module.params?.map(param => param.name) as string[]
+
+        script.push(`${functionName}() {`)
+        for (const [index, param] of Object.entries(params)) {
+          script.push(`${getTabs(this.numberFuncts)}local ${param}=$${Number(index) + 1}`)
+        }
+        script.push(...this.parser(node.body).map(output => `${getTabs(this.numberFuncts)}${output}`))
+        this.numberFuncts = 0
+        script.push(getTabs(this.numberFuncts) + '}\n')
+        break
+      }
       case 'EmptyStatement':
       case 'ExpressionStatement': {
         const expression = (node as ExpressionStatement).expression as CallExpression
@@ -88,47 +99,9 @@ export class Transform {
       }
       case 'IfStatement': {
         this.numberIfs = this.numberIfs + 1
-        switch (node.test.type) {
-        case 'ClassDeclaration':
-        case 'ClassExpression':
-        case 'AssignmentExpression':
-        case 'BinaryExpression': { script.push(...this.parser({ body: [node.test] }, node)); break}
-        case 'ConditionalExpression':
-        case 'MetaProperty':
-        case 'ChainExpression':
-        case 'JSXClosingElement':
-        case 'JSXClosingFragment':
-        case 'JSXExpressionContainer':
-        case 'JSXOpeningElement':
-        case 'JSXOpeningFragment':
-        case 'JSXSpreadChild':
-        case 'LogicalExpression':
-        case 'NewExpression':
-        case 'RestElement':
-        case 'SequenceExpression':
-        case 'SpreadElement':
-        case 'AwaitExpression':
-        case 'CallExpression':
-        case 'ImportExpression':
-        case 'FunctionExpression':
-        case 'Literal':
-        case 'TemplateLiteral':
-        case 'MemberExpression':
-        case 'ArrayExpression':
-        case 'ArrayPattern':
-        case 'Identifier':
-        case 'Import':
-        case 'JSXElement':
-        case 'JSXFragment':
-        case 'ObjectExpression':
-        case 'ObjectPattern':
-        case 'Super':
-        case 'ThisExpression':
-        case 'TaggedTemplateExpression':
-        case 'UnaryExpression':
-        case 'UpdateExpression':
-        case 'YieldExpression':
-        }
+        script.push(`\nif [[ ${this.parseExpression(node.test)} ]]; then`)
+        script.push(...(this.parser(node.consequent)).map((text) => `${getTabs(this.numberIfs)}${text}`))
+        script.push('fi\n')
         this.numberIfs = 0
         break
       }
@@ -139,7 +112,10 @@ export class Transform {
       case 'WhileStatement':
       case 'ImportDeclaration':
       case 'LabeledStatement':
-      case 'ReturnStatement':
+      case 'ReturnStatement': {
+        script.push(`echo $(( ${this.parseExpression(node.argument)} ))`)
+        break
+      }
       case 'SwitchStatement': {
         const module = (node as SwitchStatement)
         const discriminant = this.parseExpression<string>(module.discriminant)
@@ -152,12 +128,10 @@ export class Transform {
           } else {
             script.push('  *)\n)')
           }
-          console.log(caseNode.consequent)
           script.push('    ' + this.parser(...caseNode.consequent).join('\n') + '\n')
           script.push('    ;;')
         }
         script.push('esac\n')
-        console.log(ast.body)
 
         break
       }
@@ -166,7 +140,12 @@ export class Transform {
       case 'VariableDeclaration': {
         if (node.type !== 'VariableDeclaration') break
         for (const variable of node.declarations) {
-          script.push(`${(variable.id as Identifier).name}="${(variable.init as Literal).value}"`)
+          const variableName = this.parseExpression<string>(variable.id)
+          const intNode = this.parseExpression(variable.init)
+          
+
+          script.push(`${variableName}=${variable.init?.type === 'Literal' ? `"${intNode}"` : intNode}`)
+          
         }
         break
       }
@@ -181,7 +160,6 @@ export class Transform {
         writeFileSync('test.json', JSON.stringify(ast, null, 2))
       }
     }
-    console.log(script.join('\n'))
     writeFileSync('test.sh', script.join('\n'))
     return script
   }
@@ -190,7 +168,14 @@ export class Transform {
     switch (expression.type) {
     case 'ArrowFunctionExpression':
     case 'AssignmentExpression':
-    case 'BinaryExpression':
+    case 'BinaryExpression': {
+      const module = (expression as BinaryExpression)
+      const left = this.parseExpression<string>(module.left)
+      const right = this.parseExpression<string>(module.right)
+      const operator = this.parseOperator(module.operator)
+
+      return `"$\{${left}}" ${operator} "$\{${right}}"` as T
+    }
     case 'ConditionalExpression':
     case 'MetaProperty':
     case 'ChainExpression':
@@ -206,7 +191,13 @@ export class Transform {
     case 'SequenceExpression':
     case 'SpreadElement':
     case 'AwaitExpression':
-    case 'CallExpression':
+    case 'CallExpression': {
+      const module = (expression as CallExpression)
+      const functionName = module.callee.name
+      const args = module.arguments.map((arg) => this.parseExpression(arg)).join(' ')
+
+      return `$( ${functionName} ${args} )` as T
+    }
     case 'ImportExpression':
     case 'ClassExpression':
     case 'ClassDeclaration':
