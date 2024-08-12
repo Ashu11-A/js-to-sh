@@ -1,7 +1,7 @@
 import AbstractSyntaxTree from 'abstract-syntax-tree'
 import { writeFileSync } from 'fs'
 import { readFile } from 'fs/promises'
-import { BinaryExpression, BlockStatement, VariableDeclaration, BlockStatementBase, ImportDeclaration, ReturnStatement, CallExpression, DeclarationStatement, IfStatement, Expression, ExpressionStatement, FunctionDeclaration, Identifier, Literal, MemberExpression, Statement, SwitchStatement } from '../../node_modules/meriyah/src/estree.js'
+import { BinaryExpression, SpreadElement, BlockStatement, VariableDeclaration, BlockStatementBase, ImportDeclaration, ReturnStatement, CallExpression, DeclarationStatement, IfStatement, Expression, ExpressionStatement, FunctionDeclaration, Identifier, Literal, MemberExpression, Statement, SwitchStatement } from '../../node_modules/meriyah/src/estree.js'
 import { breakLines } from '../libs/breakLines.js'
 import { getTabs } from '../libs/getTabs.js'
 import { join } from 'path'
@@ -78,10 +78,10 @@ export class Transform {
    * @param {Expression} expression
    * @returns {(T | undefined)}
    */
-  parseExpression<T>(expression: Expression | null): T | undefined {
-    if (expression === null || expression === undefined) return
+  parseExpression(expression: Expression | null): string {
+    if (expression === null || expression === undefined) return ''
 
-    const Expressions: Record<string, () => string | number | void> = {
+    const Expressions: Record<string, () => string> = {
       ArrowFunctionExpression: () => { return '' },
       AssignmentExpression: () => { return '' },
       BinaryExpression: () => { return this.parseBinaryExpression(expression as BinaryExpression) },
@@ -107,7 +107,7 @@ export class Transform {
       FunctionExpression: () => { return '' },
       Literal: () => { return this.parseLiteral(expression as Literal)},
       TemplateLiteral: () => { return '' },
-      MemberExpression: () => { return '' },
+      MemberExpression: () => { return this.parseMemberExpression(expression as MemberExpression, []) },
       ArrayExpression: () => { return '' },
       ArrayPattern: () => { return '' },
       Identifier: () => { return this.parseIdentifier(expression as Identifier) },
@@ -121,11 +121,11 @@ export class Transform {
       TaggedTemplateExpression: () => { return '' },
       UnaryExpression: () => { return '' },
       UpdateExpression: () => { return '' },
-      YieldExpression: () => {}
+      YieldExpression: () => { return '' }
     }
 
     const expressionFunction = Expressions[expression.type]
-    return expressionFunction() as T
+    return expressionFunction()
   }
 
   /**
@@ -162,10 +162,10 @@ export class Transform {
     const alternate = expression.alternate ? this.parseElseStatement(expression.alternate) : ''
     const code: string[] = []
   
-    code.push(`if ${test}; then`)
+    code.push(`${this.numberIfs === 1 ? '\n' : ''}if ${test}; then`)
     code.push(`${breakLines(consequent.map(content => `${getTabs(this.numberIfs)}${content}`).filter((content) => content.length === 0 ? false : true))}`)
     if (alternate.length > 0) code.push(alternate)
-    code.push('fi')
+    code.push(`fi${this.numberIfs === 1 ? '\n' : ''}`)
   
     this.numberIfs = 1
     return code.join('\n')
@@ -193,8 +193,8 @@ export class Transform {
    * @returns {string}
    */
   parseBinaryExpression(node: BinaryExpression): string {
-    const left = this.parseExpression<string>(node.left)
-    const right = this.parseExpression<string>(node.right)
+    const left = this.parseExpression(node.left)
+    const right = this.parseExpression(node.right)
     const operator = this.parseOperator(node.operator)
 
     return `[[ "$\{${left}}" ${operator} "$\{${right}} ]]"`
@@ -210,10 +210,16 @@ export class Transform {
    * @returns {string}
    */
   parseCallExpression (expression: CallExpression): string {
-    const functionName = expression.callee.name
-    const args = expression.arguments.map((arg) => this.parseExpression(arg)).join(' ')
-
-    return `${functionName} $\{${args}}`
+    if (expression?.callee.type === 'MemberExpression') {
+      const callee = expression.callee as MemberExpression
+      const args = expression.arguments as (Expression | SpreadElement)[]
+      return this.parseMemberExpression(callee, args)
+    } else {
+      const functionName = expression.callee.name
+      const args = expression.arguments.map((arg) => this.parseExpression(arg)).join(' ')
+  
+      return `${functionName} ${args.length > 0 ? `$\{${args}}` : ''}`
+    }
   }
 
   /**
@@ -270,29 +276,8 @@ export class Transform {
     const expression = node.expression
     if (expression === undefined) return ''
 
-    switch (expression.type) {
-    case 'CallExpression': {
-      const callee = (expression as CallExpression).callee
-      switch (callee.type) {
-      case 'MemberExpression': {
-        const object = ((callee as MemberExpression).object as Identifier).name
-        const property = ((callee as MemberExpression).property as Identifier).name
-      
-        switch (`${object}.${property}`) {
-        case 'console.log': {
-          for (const argument of expression.arguments) {
-            const result = this.parseExpression(argument)
-            code.push(`echo "${result}"`)
-          }
-          break
-        }
-        }
-      }
-      }
-                      
-    }
-    }
-
+    // Isso irá para CallExpression
+    code.push(this.parseExpression(expression))
     return code.join('\n')
   }
   
@@ -302,9 +287,9 @@ export class Transform {
    * @param {ImportDeclaration} node
    * @returns {string}
    */
-  parseImportDeclaration (node: ImportDeclaration) {
+  parseImportDeclaration (node: ImportDeclaration): string {
     const module = (node as ImportDeclaration)
-    const path = join(process.cwd(), 'src', `${(this.parseExpression<string>(module.source) as string).replace('../', '').replace('javascript', 'shellscript').replace('.js', '.sh')}`)
+    const path = join(process.cwd(), 'src', `${(this.parseExpression(module.source) as string).replace('../../', '').replace('javascript', 'shellscript').replace('.js', '.sh')}`)
 
     return `source ${path}`
   }
@@ -313,20 +298,36 @@ export class Transform {
    * Caso usado em functions isso ira formatar o return da função
    * 
    * Input:
+   * const number = 0
+   * 
    * function test() {
-   *    return "Hello World"
+   *    return number
    * }
    * 
    * Output:
+   * number="0"
+   * 
    * teste() {
-   *  echo $(( "Hello World" ))
+   *  echo $(( "number" ))
    * }
    *
    * @param {ReturnStatement} node
    * @returns {string}
    */
-  parseReturnStatement (node: ReturnStatement) {
-    return `echo $(( "${this.parseExpression((node as ReturnStatement).argument)}" ))`
+  parseReturnStatement (node: ReturnStatement): string {
+    const element = this.parseExpression((node as ReturnStatement).argument)
+
+    switch (node.argument?.type) {
+    // Identifier são constantes: const num = 0
+    case 'Identifier': {
+      return `echo $(( "${element}" ))`
+    }
+    // Literal são string: "Hello world"
+    case 'Literal': {
+      return `echo "${element}"`
+    }
+    }
+    return `echo $(( "${element}" ))` 
   }
   
   /**
@@ -337,7 +338,7 @@ export class Transform {
    */
   parseSwitchStatement (node: SwitchStatement) {
     const module = (node as SwitchStatement)
-    const discriminant = this.parseExpression<string>(module.discriminant)
+    const discriminant = this.parseExpression(module.discriminant)
 
     this.script.push(`case $${discriminant} in`)
 
@@ -363,11 +364,35 @@ export class Transform {
   parseVariableDeclaration (node: VariableDeclaration): string {
     const code: string[] = []
     for (const variable of node.declarations) {
-      const variableName = this.parseExpression<string>(variable.id)
+      const variableName = this.parseExpression(variable.id)
       const intNode = this.parseExpression(variable.init)
       
 
       code.push(`${variableName}=${variable.init?.type === 'Literal' ? `"${intNode}"` : intNode}`)
+    }
+    return code.join('\n')
+  }
+  
+  /**
+   * Trata expressões, como: console.log
+   *
+   * Usado em: parseCallExpression
+   * @param {MemberExpression} expression
+   * @returns {string}
+   */
+  parseMemberExpression (expression: MemberExpression, args: (Expression | SpreadElement)[]): string {
+    const code: string[] = []
+    const object = (expression.object as Identifier).name
+    const property = (expression.property as Identifier).name
+  
+    switch (`${object}.${property}`) {
+    case 'console.log': {
+      for (const argument of args) {
+        const result = this.parseExpression(argument)
+        code.push(`echo "${result}"`)
+      }
+      break
+    }
     }
     return code.join('\n')
   }
