@@ -1,6 +1,6 @@
 import { stat } from 'fs/promises'
 
-export async function isDir(path: string) {
+export async function isFile(path: string) {
   try {
     return (await stat(path)).isFile()
   } catch {

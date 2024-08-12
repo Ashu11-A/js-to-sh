@@ -1,13 +1,11 @@
-export function isEmpty (content) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function isEmpty (content: any) {
   switch (typeof content) {
-  case 'string': {
-    if (content.length === 0) {
-      return true
-    }
-    return false
-  }
   case 'undefined': {
     return true
+  }
+  default: {
+    return false
   }
   }
 }

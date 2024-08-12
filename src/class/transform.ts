@@ -1,25 +1,16 @@
 import AbstractSyntaxTree from 'abstract-syntax-tree'
 import { writeFileSync } from 'fs'
 import { readFile } from 'fs/promises'
-import { BinaryExpression, ImportDeclaration, ReturnStatement, CallExpression, DeclarationStatement, Expression, ExpressionStatement, FunctionDeclaration, Identifier, Literal, MemberExpression, Statement, SwitchStatement } from '../../node_modules/meriyah/src/estree'
-import { breakLines } from '../libs/breakLines'
-import { getTabs } from '../libs/getTabs'
+import { BinaryExpression, BlockStatement, VariableDeclaration, BlockStatementBase, ImportDeclaration, ReturnStatement, CallExpression, DeclarationStatement, IfStatement, Expression, ExpressionStatement, FunctionDeclaration, Identifier, Literal, MemberExpression, Statement, SwitchStatement } from '../../node_modules/meriyah/src/estree.js'
+import { breakLines } from '../libs/breakLines.js'
+import { getTabs } from '../libs/getTabs.js'
 import { join } from 'path'
 
-interface TransformOptions {
-    path: string
-}
-
 export class Transform {
-  private readonly path: string
   private numberIfs: number = 0
   private numberFuncts: number = 0
+  public script: string[] = []
 
-  constructor ({ path }: TransformOptions) {
-    this.path = path
-  }
-
-  
   /**
    * Carrega o AST do javascript, gera um json com todas as informações necessarias para a conversão para shell script
    *
@@ -33,190 +24,53 @@ export class Transform {
   }
 
   parser (ast?: (Statement | DeclarationStatement) | null) {
-    const script: string[] = []
-    if (ast === undefined || ast === null) return script
+    const processed: string[] = []
+    if (ast === undefined || ast === null) return processed
 
-    const runProcess = (node: Expression | Statement) => {
-      switch (node.type) {
-      case 'BlockStatement': {
-        for (const statement of node.body) {
-          this.parser(statement)
-        }
-        break
+    const process = (node: Statement) => {
+      const Declarations: Record<string, () => string> = {
+        BlockStatement: () => { return this.parseBlockStatement(node as BlockStatement) },
+        BreakStatement: () => { return '' },
+        ContinueStatement: () => { return '' },
+        DebuggerStatement: () => { return '' },
+        ExportDefaultDeclaration: () => { return '' },
+        ExportAllDeclaration: () => { return '' },
+        ExportNamedDeclaration: () => { return '' },
+        FunctionDeclaration: () => { return this.parseFunctionDeclaration(node as FunctionDeclaration) },
+        EmptyStatement: () => { return '' },
+        ExpressionStatement: () => { return this.parseExpressionStatement(node as ExpressionStatement) },
+        IfStatement: () => { return this.parseIfStatement(node as IfStatement) },
+        DoWhileStatement: () => { return '' },
+        ForInStatement: () => { return '' },
+        ForOfStatement: () => { return '' },
+        ForStatement: () => { return '' },
+        WhileStatement: () => { return '' },
+        ImportDeclaration: () => { return this.parseImportDeclaration(node as ImportDeclaration) },
+        LabeledStatement: () => { return '' },
+        ReturnStatement: () => { return this.parseReturnStatement(node as ReturnStatement) },
+        SwitchStatement: () => { return this.parseSwitchStatement(node as SwitchStatement) },
+        ThrowStatement: () => { return '' },
+        TryStatement: () => { return '' },
+        VariableDeclaration: () => { return this.parseVariableDeclaration(node as VariableDeclaration) },
+        WithStatement: () => { return '' },
       }
-      case 'BreakStatement': {
-        break
-      }
-      case 'ContinueStatement': {
-        break
-      }
-      case 'DebuggerStatement': {
-        break
-      }
-      case 'ExportDefaultDeclaration': {
-        break
-      }
-      case 'ExportAllDeclaration': {
-        break
-      }
-      case 'ExportNamedDeclaration': {
-        break
-      }
-      case 'FunctionDeclaration': {
-        if (node.type !== 'FunctionDeclaration') return
-        this.numberFuncts = this.numberFuncts + 1
+      console.log(`Building: ${node.type}`)
+      const result = Declarations[node.type]()
+      console.log(`Output: ${result}`)
+      return result
+    }
 
-        const module = (node as FunctionDeclaration)
-        const functionName = module.id?.name
-        const params = (module.params as Identifier[]).map(param => param.name) as string[]
-
-        script.push(`${functionName}() {`)
-        for (const [index, param] of Object.entries(params)) {
-          script.push(`${getTabs(this.numberFuncts)}local ${param}=$${Number(index) + 1}`)
-        }
-        script.push(...this.parser(node.body).map(output => `${getTabs(this.numberFuncts)}${output}`))
-        this.numberFuncts = 0
-        script.push(getTabs(this.numberFuncts) + '}\n')
-        break
-      }
-      case 'EmptyStatement': {
-        break
-      }
-      case 'ExpressionStatement': {
-        const expression = (node as ExpressionStatement).expression as CallExpression
-        if (expression === undefined) return script
-
-        switch (expression.type) {
-        case 'CallExpression': {
-          const callee = (expression as CallExpression).callee
-          switch (callee.type) {
-          case 'MemberExpression': {
-            const object = ((callee as MemberExpression).object as Identifier).name
-            const property = ((callee as MemberExpression).property as Identifier).name
-        
-            switch (`${object}.${property}`) {
-            case 'console.log': {
-              for (const argument of expression.arguments) {
-                switch (argument.type) {
-                case 'Literal': {
-                  script.push(`echo "${argument.value}"`)
-                  break
-                }
-                case 'Identifier': {
-                  script.push(`echo "$\{${argument.name}}"`)
-                }
-                }
-              }
-              break
-            }
-            }
-          }
-          }
-                        
-        }
-        }
-        break
-      }
-      case 'IfStatement': {
-        this.numberIfs = this.numberIfs + 1
-        const test = this.parseExpression(node.test)
-        const consequent = this.parser(node.consequent)
-        const alternate = node.alternate ? this.parseElseStatement(node.alternate) : ''
-
-        console.log(test)
-
-        script.push(`if ${test}; then`)
-        script.push(`${breakLines(consequent.map(content => `${getTabs(this.numberIfs)}${content}`).filter((content) => content.length === 0 ? false : true))}`)
-        if (alternate.length > 0) script.push(alternate)
-        script.push('fi')
-        
-        this.numberIfs = 1
-        break
-      }
-      case 'DoWhileStatement': {
-        break
-      }
-      case 'ForInStatement': {
-        break
-      }
-      case 'ForOfStatement': {
-        break
-      }
-      case 'ForStatement': {
-        break
-      }
-      case 'WhileStatement': {
-        break
-      }
-      case 'ImportDeclaration': {
-        const module = (node as ImportDeclaration)
-        const path = join(process.cwd(), 'src', `${(this.parseExpression<string>(module.source) as string).replace('../', '').replace('javascript', 'shellscript')}.sh`)
-
-        script.push(`source ${path}`)
-        break
-      }
-      case 'LabeledStatement': {
-        break
-      }
-      case 'ReturnStatement': {
-        script.push(`echo $(( ${this.parseExpression((node as ReturnStatement).argument)} ))`)
-        break
-      }
-      case 'SwitchStatement': {
-        const module = (node as SwitchStatement)
-        const discriminant = this.parseExpression<string>(module.discriminant)
-        script.push(`case $${discriminant} in`)
-
-        for (const caseNode of module.cases) {
-          if (caseNode.test) {
-            const testValue = this.parseExpression(caseNode.test)
-            script.push(`  "${testValue}")\n`)
-          } else {
-            script.push('  *)\n)')
-          }
-          script.push('    ' + this.parser(...caseNode.consequent).join('\n') + '\n')
-          script.push('    ;;')
-        }
-        script.push('esac\n')
-
-        break
-      }
-      case 'ThrowStatement':{
-        break
-      }
-      case 'TryStatement':{
-        break
-      }
-      case 'VariableDeclaration': {
-        if (node.type !== 'VariableDeclaration') break
-        for (const variable of node.declarations) {
-          const variableName = this.parseExpression<string>(variable.id)
-          const intNode = this.parseExpression(variable.init)
-          
-
-          script.push(`${variableName}=${variable.init?.type === 'Literal' ? `"${intNode}"` : intNode}`)
-          
-        }
-        break
-      }
-      case 'WithStatement':{
-        break
-      }
+    if (Array.isArray((ast as BlockStatementBase)?.body)) {
+      for (const node of (ast as BlockStatementBase).body) {
+        processed.push(process(node))
       }
     }
 
-    if (Array.isArray(ast?.body)) {
-      for (const node of ast.body) {
-        runProcess(node)
-      }
-    }
-
-    writeFileSync('test.json', JSON.stringify(ast, null, 2))
-    writeFileSync('test.sh', breakLines(script))
-    return script
+    writeFileSync('test.json', JSON.stringify(processed, null, 2))
+    writeFileSync('test.sh', breakLines(processed))
+    return processed
   }
 
-  
   /**
    * Formata valores Primarios que são usados no parse principal
    *
@@ -227,68 +81,53 @@ export class Transform {
   parseExpression<T>(expression: Expression | null): T | undefined {
     if (expression === null || expression === undefined) return
 
-    switch (expression.type) {
-    case 'ArrowFunctionExpression':
-    case 'AssignmentExpression':
-    case 'BinaryExpression': {
-      const module = (expression as BinaryExpression)
-      const left = this.parseExpression<string>(module.left)
-      const right = this.parseExpression<string>(module.right)
-      const operator = this.parseOperator(module.operator)
+    const Expressions: Record<string, () => string | number | void> = {
+      ArrowFunctionExpression: () => { return '' },
+      AssignmentExpression: () => { return '' },
+      BinaryExpression: () => { return this.parseBinaryExpression(expression as BinaryExpression) },
+      ConditionalExpression: () => { return '' },
+      MetaProperty: () => { return '' },
+      ChainExpression: () => { return '' },
+      JSXClosingElement: () => { return '' },
+      JSXClosingFragment: () => { return '' },
+      JSXExpressionContainer: () => { return '' },
+      JSXOpeningElement: () => { return '' },
+      JSXOpeningFragment: () => { return '' },
+      JSXSpreadChild: () => { return '' },
+      LogicalExpression: () => { return '' },
+      NewExpression: () => { return '' },
+      RestElement: () => { return '' },
+      SequenceExpression: () => { return '' },
+      SpreadElement: () => { return '' },
+      AwaitExpression: () => { return '' },
+      CallExpression: () => { return this.parseCallExpression(expression as CallExpression) },
+      ImportExpression: () => { return '' },
+      ClassExpression: () => { return '' },
+      ClassDeclaration: () => { return '' },
+      FunctionExpression: () => { return '' },
+      Literal: () => { return this.parseLiteral(expression as Literal)},
+      TemplateLiteral: () => { return '' },
+      MemberExpression: () => { return '' },
+      ArrayExpression: () => { return '' },
+      ArrayPattern: () => { return '' },
+      Identifier: () => { return this.parseIdentifier(expression as Identifier) },
+      Import: () => { return '' },
+      JSXElement: () => { return '' },
+      JSXFragment: () => { return '' },
+      ObjectExpression: () => { return '' },
+      ObjectPattern: () => { return '' },
+      Super: () => { return '' },
+      ThisExpression: () => { return '' },
+      TaggedTemplateExpression: () => { return '' },
+      UnaryExpression: () => { return '' },
+      UpdateExpression: () => { return '' },
+      YieldExpression: () => {}
+    }
 
-      return `[[ "$\{${left}}" ${operator} "$\{${right}} ]]"` as T
-    }
-    case 'ConditionalExpression':
-    case 'MetaProperty':
-    case 'ChainExpression':
-    case 'JSXClosingElement':
-    case 'JSXClosingFragment':
-    case 'JSXExpressionContainer':
-    case 'JSXOpeningElement':
-    case 'JSXOpeningFragment':
-    case 'JSXSpreadChild':
-    case 'LogicalExpression':
-    case 'NewExpression':
-    case 'RestElement':
-    case 'SequenceExpression':
-    case 'SpreadElement':
-    case 'AwaitExpression':
-    case 'CallExpression': {
-      const module = (expression as CallExpression)
-      const functionName = module.callee.name
-      const args = module.arguments.map((arg) => this.parseExpression(arg)).join(' ')
-
-      return `${functionName} $\{${args}}` as T
-    }
-    case 'ImportExpression':
-    case 'ClassExpression':
-    case 'ClassDeclaration':
-    case 'FunctionExpression':
-    case 'Literal': {
-      return (expression as Literal).value as T
-    }
-    case 'TemplateLiteral':
-    case 'MemberExpression':
-    case 'ArrayExpression':
-    case 'ArrayPattern':
-    case 'Identifier': {
-      return (expression as Identifier).name as T
-    }
-    case 'Import':
-    case 'JSXElement':
-    case 'JSXFragment':
-    case 'ObjectExpression':
-    case 'ObjectPattern':
-    case 'Super':
-    case 'ThisExpression':
-    case 'TaggedTemplateExpression':
-    case 'UnaryExpression':
-    case 'UpdateExpression':
-    case 'YieldExpression':
-    }
+    const expressionFunction = Expressions[expression.type]
+    return expressionFunction() as T
   }
 
-  
   /**
    * Retorna o operador equivalente do javascript para o shell script
    *
@@ -312,6 +151,27 @@ export class Transform {
   }
 
   /**
+   * Formata todos os If para sheçç script
+   *
+   * @param {IfStatement} expression
+   */
+  parseIfStatement (expression: IfStatement) {
+    this.numberIfs = this.numberIfs + 1
+    const test = this.parseExpression(expression.test)
+    const consequent = this.parser(expression.consequent)
+    const alternate = expression.alternate ? this.parseElseStatement(expression.alternate) : ''
+    const code: string[] = []
+  
+    code.push(`if ${test}; then`)
+    code.push(`${breakLines(consequent.map(content => `${getTabs(this.numberIfs)}${content}`).filter((content) => content.length === 0 ? false : true))}`)
+    if (alternate.length > 0) code.push(alternate)
+    code.push('fi')
+  
+    this.numberIfs = 1
+    return code.join('\n')
+  }
+
+  /**
    * Usado para pegar recursivamente todos os else do javascript
    * @param node 
    * @returns 
@@ -324,5 +184,191 @@ export class Transform {
 
     if (node.alternate) content.push(this.parseElseStatement(node.alternate))
     return breakLines(content)
+  }
+
+  /**
+   * Formata Comparações com Operações (==, >=, <=, <, >), usados em if & elif
+   *
+   * @param {BinaryExpression} node
+   * @returns {string}
+   */
+  parseBinaryExpression(node: BinaryExpression): string {
+    const left = this.parseExpression<string>(node.left)
+    const right = this.parseExpression<string>(node.right)
+    const operator = this.parseOperator(node.operator)
+
+    return `[[ "$\{${left}}" ${operator} "$\{${right}} ]]"`
+  }
+
+  /**
+   * Formata chamadas de funções junto com suas args
+   * 
+   * Input: function(arg) {}
+   * Output: function ${arg}
+   *
+   * @param {CallExpression} expression
+   * @returns {string}
+   */
+  parseCallExpression (expression: CallExpression): string {
+    const functionName = expression.callee.name
+    const args = expression.arguments.map((arg) => this.parseExpression(arg)).join(' ')
+
+    return `${functionName} $\{${args}}`
+  }
+
+  /**
+   * Retorna o literal das constantes
+   *
+   * @param {Literal} expression
+   * @returns {string}
+   */
+  parseLiteral (expression: Literal): string {
+    return expression.value as string
+  }
+
+  /**
+   * Retorna o identificador das constantes
+   *
+   * @param {Identifier} expression
+   * @returns {string}
+   */
+  parseIdentifier (expression: Identifier): string {
+    return expression.name as string
+  }
+
+  parseBlockStatement (node: BlockStatement) {
+    const code: string[] = []
+
+    for (const statement of node.body) {
+      code.push(...this.parser(statement))
+    }
+
+    return code.join('\n')
+  }
+
+  parseFunctionDeclaration (node: FunctionDeclaration) {
+    const code: string[] = []
+    this.numberFuncts = this.numberFuncts + 1
+
+    const module = (node as FunctionDeclaration)
+    const functionName = module.id?.name
+    const params = (module.params as Identifier[]).map(param => param.name) as string[]
+
+    code.push(`${functionName}() {`)
+    for (const [index, param] of Object.entries(params)) {
+      code.push(`${getTabs(this.numberFuncts)}local ${param}=$${Number(index) + 1}`)
+    }
+    code.push(...this.parser(node.body).map(output => `${getTabs(this.numberFuncts)}${output}`))
+    this.numberFuncts = 0
+    code.push(getTabs(this.numberFuncts) + '}\n')
+
+    return code.join('\n')
+  }
+
+  parseExpressionStatement (node: ExpressionStatement) {
+    const code: string[] = []
+    const expression = node.expression
+    if (expression === undefined) return ''
+
+    switch (expression.type) {
+    case 'CallExpression': {
+      const callee = (expression as CallExpression).callee
+      switch (callee.type) {
+      case 'MemberExpression': {
+        const object = ((callee as MemberExpression).object as Identifier).name
+        const property = ((callee as MemberExpression).property as Identifier).name
+      
+        switch (`${object}.${property}`) {
+        case 'console.log': {
+          for (const argument of expression.arguments) {
+            const result = this.parseExpression(argument)
+            code.push(`echo "${result}"`)
+          }
+          break
+        }
+        }
+      }
+      }
+                      
+    }
+    }
+
+    return code.join('\n')
+  }
+  
+  /**
+   * Formata os imports de arquivo, ainda em experimento, e não deve se usar para arquivos externos, apenas arquivos previamente processados por essa biblioteca!
+   *
+   * @param {ImportDeclaration} node
+   * @returns {string}
+   */
+  parseImportDeclaration (node: ImportDeclaration) {
+    const module = (node as ImportDeclaration)
+    const path = join(process.cwd(), 'src', `${(this.parseExpression<string>(module.source) as string).replace('../', '').replace('javascript', 'shellscript').replace('.js', '.sh')}`)
+
+    return `source ${path}`
+  }
+  
+  /**
+   * Caso usado em functions isso ira formatar o return da função
+   * 
+   * Input:
+   * function test() {
+   *    return "Hello World"
+   * }
+   * 
+   * Output:
+   * teste() {
+   *  echo $(( "Hello World" ))
+   * }
+   *
+   * @param {ReturnStatement} node
+   * @returns {string}
+   */
+  parseReturnStatement (node: ReturnStatement) {
+    return `echo $(( "${this.parseExpression((node as ReturnStatement).argument)}" ))`
+  }
+  
+  /**
+   * Formata switchs
+   *
+   * @param {SwitchStatement} node
+   * @returns {string}
+   */
+  parseSwitchStatement (node: SwitchStatement) {
+    const module = (node as SwitchStatement)
+    const discriminant = this.parseExpression<string>(module.discriminant)
+
+    this.script.push(`case $${discriminant} in`)
+
+    for (const caseNode of module.cases) {
+      if (caseNode.test) {
+        const testValue = this.parseExpression(caseNode.test)
+        this.script.push(`  "${testValue}")\n`)
+      } else {
+        this.script.push('  *)\n)')
+      }
+      this.script.push('    ' + this.parser(...caseNode.consequent).join('\n') + '\n')
+      this.script.push('    ;;')
+    }
+    return 'esac\n'
+  }
+  
+  /**
+   * Formata Declarações
+   *
+   * @param {VariableDeclaration} node
+   * @returns {string}
+   */
+  parseVariableDeclaration (node: VariableDeclaration): string {
+    const code: string[] = []
+    for (const variable of node.declarations) {
+      const variableName = this.parseExpression<string>(variable.id)
+      const intNode = this.parseExpression(variable.init)
+      
+
+      code.push(`${variableName}=${variable.init?.type === 'Literal' ? `"${intNode}"` : intNode}`)
+    }
+    return code.join('\n')
   }
 }
