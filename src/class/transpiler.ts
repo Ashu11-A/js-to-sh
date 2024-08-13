@@ -83,8 +83,6 @@ export default class Transpiler {
 
     if (this.options.debug) return Array.isArray(result) ? result.push('# ' + node.type) : `${result} # ${node.type}\n`
     return result
-    // console.log(`Output: ${result}`)
-    // return result
   }
 
   /**
@@ -183,7 +181,7 @@ export default class Transpiler {
   }
 
   /**
-   * Formata todos os If para sheçç script
+   * Formata todos os If para shell script
    *
    * @param {IfStatement} expression
    */
@@ -230,7 +228,14 @@ export default class Transpiler {
     const right = this.parseExpression(node.right)
     const operator = this.parseOperator(node.operator)
 
-    return `[[ ${this.parseReturnString(node.left.type, left)} ${operator} ${this.parseReturnString(node.right.type, right)} ]]`
+    const result = `${this.parseReturnString(node.left.type, left)} ${operator} ${this.parseReturnString(node.right.type, right)}`
+
+    // Possivel erro, isso relamente é um tapa buraco
+    if (operator === '+') {
+      return `$(( ${result} ))`
+    }
+
+    return `[[ ${result} ]]`
   }
 
   /**
