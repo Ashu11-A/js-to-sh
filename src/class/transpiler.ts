@@ -4,7 +4,7 @@ import { readFileSync, writeFileSync } from 'fs'
 import { readFile } from 'fs/promises'
 import { basename, dirname, join, resolve } from 'path'
 import terminalLink from 'terminal-link'
-import { ArrayExpression, BinaryExpression, BlockStatement, BlockStatementBase, BreakStatement, CallExpression, DeclarationStatement, Expression, ExpressionStatement, ForOfStatement, FunctionDeclaration, Identifier, IfStatement, ImportDeclaration, Literal, MemberExpression, MetaProperty, PrivateIdentifier, ReturnStatement, SpreadElement, Statement, SwitchStatement, VariableDeclaration } from '../../node_modules/meriyah/src/estree.js'
+import { ArrayExpression, BinaryExpression, BlockStatement, BlockStatementBase, BreakStatement, CallExpression, DeclarationStatement, Expression, ExpressionStatement, ForOfStatement, FunctionDeclaration, Identifier, IfStatement, ImportDeclaration, Literal, MemberExpression, MetaProperty, PrivateIdentifier, ReturnStatement, SpreadElement, Statement, SwitchStatement, TemplateLiteral, VariableDeclaration } from '../../node_modules/meriyah/src/estree.js'
 import { breakLines } from '../libs/breakLines.js'
 import { getTabs } from '../libs/getTabs.js'
 
@@ -121,7 +121,7 @@ export default class Transpiler {
       ClassDeclaration: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
       FunctionExpression: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
       Literal: () => { return this.parseLiteral(expression as Literal)},
-      TemplateLiteral: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
+      TemplateLiteral: () => this.parseTemplateLiteral(expression as TemplateLiteral),
       MemberExpression: () => { return this.parseMemberExpression(expression as MemberExpression, []) },
       ArrayExpression: () => this.parseArrayExpression(expression as ArrayExpression),
       ArrayPattern: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
@@ -520,5 +520,35 @@ export default class Transpiler {
 
   parseBreakStatement (node: BreakStatement) {
     return node?.label === null ? '' : this.parseExpression(node.label)
+  }
+
+  /**
+   * Converte strings dinamicas que usam: ``
+   *
+   * @param {TemplateLiteral} expression
+   * @returns {string}
+   */
+  parseTemplateLiteral (expression: TemplateLiteral): string {
+
+    const code: string[] = []
+
+    /*
+     * Quasis são os elementos que vem antes ou depois de uma constante declarada dentro de ``
+     * Ex: return `${text} ${text}`
+     *     return `quasis${text}quasis${text}quasis`
+     * Serve para preservar o expaçamento correto das strings
+     */
+    for (const [index, element] of Object.entries(expression.quasis)) {
+      code.push(element.value.raw)
+  
+      if (Number(index) < expression.expressions.length) {
+        const content = expression.expressions[Number(index)]
+        const value = this.parseReturnString(content.type, this.parseExpression(content))
+        code.push(value)
+      }
+    }
+
+    return code.join('')
+
   }
 }
