@@ -7,7 +7,7 @@ import terminalLink from 'terminal-link'
 import { ArrayExpression, BinaryExpression, Parameter, BlockStatement, BlockStatementBase, BreakStatement, CallExpression, DeclarationStatement, Expression, ExpressionStatement, ForOfStatement, FunctionDeclaration, Identifier, IfStatement, ImportDeclaration, Literal, MemberExpression, MetaProperty, PrivateIdentifier, ReturnStatement, SpreadElement, Statement, SwitchStatement, TemplateLiteral, VariableDeclaration } from '../../node_modules/meriyah/src/estree.js'
 import { breakLines } from '../libs/breakLines.js'
 import { getTabs } from '../libs/getTabs.js'
-import { Console } from './console.js'
+import { Console } from '../modules/console.js'
 
 interface TransformOptions {
   path: string
@@ -15,7 +15,7 @@ interface TransformOptions {
 }
 
 export default class Transpiler {
-  private tabs: number = 0
+  public tabs: number = 0
   public script: string[] = []
   private readonly options: TransformOptions
 
@@ -260,7 +260,8 @@ export default class Transpiler {
     if (expression?.callee.type === 'MemberExpression') {
       const callee = expression.callee as MemberExpression
       const args = expression.arguments as (Expression | SpreadElement)[]
-      return this.parseMemberExpression(callee, args)
+
+      return this.parseMemberExpression(callee, args.map((arg) => this.parseReturnString(arg.type, this.parseExpression(arg))).join(' '))
     } else {
       const functionName = expression.callee.name
       const args = expression.arguments.map((arg) => this.parseReturnString(arg.type, this.parseExpression(arg))) as (string)[]
@@ -447,7 +448,7 @@ export default class Transpiler {
    * @param {MemberExpression} expression
    * @returns {string}
    */
-  parseMemberExpression(expression: MemberExpression, args: (Expression | SpreadElement)[]): string {
+  parseMemberExpression(expression: MemberExpression, arg?: string): string {
     const code: string[] = []
 
     if (expression.object.type === 'MetaProperty') {
@@ -457,26 +458,14 @@ export default class Transpiler {
     const object = (expression.object as Identifier).name
     const property = (expression.property as Identifier).name
 
-    const exec = (input?: string) => {
-      switch (object) {
-      case 'console': {
-        code.push(new Console({ methodName: property, args: input }).parse())
-        break
-      }
-      default: {
-        console.log(c.red(`[parseMemberExpression] Not identified: ${object}.${property}`))
-      }
-      }
+    switch (object) {
+    case 'console': {
+      code.push(new Console({ methodName: property, variable: arg, transpiler: this }).parse())
+      break
     }
-
-    if (args.length === 0) {
-      exec()
-    } else {
-      for (const argument of args) {
-        const input = this.parseReturnString(argument.type, this.parseExpression(argument))
-
-        exec(input)
-      }
+    default: {
+      console.log(c.red(`[parseMemberExpression] Not identified: ${object}.${property}`))
+    }
     }
 
     return breakLines(code)
