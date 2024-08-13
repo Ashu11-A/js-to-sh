@@ -46,3 +46,4 @@
 /node_modules
 test.sh
 test.json
+/output
