@@ -4,9 +4,10 @@ import { readFileSync, writeFileSync } from 'fs'
 import { readFile } from 'fs/promises'
 import { basename, dirname, join, resolve } from 'path'
 import terminalLink from 'terminal-link'
-import { ArrayExpression, BinaryExpression, BlockStatement, BlockStatementBase, BreakStatement, CallExpression, DeclarationStatement, Expression, ExpressionStatement, ForOfStatement, FunctionDeclaration, Identifier, IfStatement, ImportDeclaration, Literal, MemberExpression, MetaProperty, PrivateIdentifier, ReturnStatement, SpreadElement, Statement, SwitchStatement, TemplateLiteral, VariableDeclaration } from '../../node_modules/meriyah/src/estree.js'
+import { ArrayExpression, BinaryExpression, Parameter, BlockStatement, BlockStatementBase, BreakStatement, CallExpression, DeclarationStatement, Expression, ExpressionStatement, ForOfStatement, FunctionDeclaration, Identifier, IfStatement, ImportDeclaration, Literal, MemberExpression, MetaProperty, PrivateIdentifier, ReturnStatement, SpreadElement, Statement, SwitchStatement, TemplateLiteral, VariableDeclaration } from '../../node_modules/meriyah/src/estree.js'
 import { breakLines } from '../libs/breakLines.js'
 import { getTabs } from '../libs/getTabs.js'
+import { Console } from './console.js'
 
 interface TransformOptions {
   path: string
@@ -18,7 +19,7 @@ export default class Transpiler {
   public script: string[] = []
   private readonly options: TransformOptions
 
-  constructor (options: TransformOptions) {
+  constructor(options: TransformOptions) {
     this.options = options
 
     if (options.debug) console.log(c.green('Debug Mode!'))
@@ -32,12 +33,12 @@ export default class Transpiler {
    * @param {string | undefined} code
    * @returns {Promise<(Statement | DeclarationStatement)>}
    */
-  async loader (code?: string): Promise<(Statement | DeclarationStatement)> {
+  async loader(code?: string): Promise<(Statement | DeclarationStatement)> {
     if (code === undefined) code = await readFile(this.options.path, { encoding: 'utf-8' })
     return new AbstractSyntaxTree(code)
   }
 
-  parser (ast?: (Statement | DeclarationStatement) | null) {
+  parser(ast?: (Statement | DeclarationStatement) | null) {
     const processed: string[] = []
     if (ast === undefined || ast === null) return processed
 
@@ -86,16 +87,16 @@ export default class Transpiler {
   }
 
   /**
-   * Formata valores Primarios que são usados no parse principal
+   * Formata valores Primarios que são usados em parseStatement e seus derivados
    *
    * @template T
    * @param {Expression} expression
    * @returns {(T | undefined)}
    */
-  parseExpression(expression: Expression | PrivateIdentifier | null): string | string[] {
+  parseExpression(expression: Expression | PrivateIdentifier | Parameter | null): string | string[] {
     if (expression === null || expression === undefined) return ''
 
-    const Expressions: Record<string, () => string | string[]> = {
+    const Expressions: Record<Expression['type'] | PrivateIdentifier['type'] | Parameter['type'], () => string | string[]> = {
       ArrowFunctionExpression: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
       AssignmentExpression: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
       BinaryExpression: () => { return this.parseBinaryExpression(expression as BinaryExpression) },
@@ -105,7 +106,7 @@ export default class Transpiler {
       JSXClosingElement: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
       JSXClosingFragment: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
       JSXExpressionContainer: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
-      PrivateIdentifier: () => { return this.parsePrivateIdentifier(expression as PrivateIdentifier)  },
+      PrivateIdentifier: () => { return this.parsePrivateIdentifier(expression as PrivateIdentifier) },
       JSXOpeningElement: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
       JSXOpeningFragment: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
       JSXSpreadChild: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
@@ -120,7 +121,7 @@ export default class Transpiler {
       ClassExpression: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
       ClassDeclaration: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
       FunctionExpression: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
-      Literal: () => { return this.parseLiteral(expression as Literal)},
+      Literal: () => { return this.parseLiteral(expression as Literal) },
       TemplateLiteral: () => this.parseTemplateLiteral(expression as TemplateLiteral),
       MemberExpression: () => { return this.parseMemberExpression(expression as MemberExpression, []) },
       ArrayExpression: () => this.parseArrayExpression(expression as ArrayExpression),
@@ -136,7 +137,8 @@ export default class Transpiler {
       TaggedTemplateExpression: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
       UnaryExpression: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
       UpdateExpression: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
-      YieldExpression: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' }
+      YieldExpression: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
+      AssignmentPattern: function (): string | string[] { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
     }
 
     const result = Expressions[expression.type]()
@@ -149,28 +151,35 @@ export default class Transpiler {
    * @param {string} value
    * @returns {string}
    */
-  parseOperator (value: string): string {
+  parseOperator(value: string): string {
     return (value === '===' || value === '==')
       ? '=='
       : ['!==', '!='].includes(value)
         ? '!='
         // : value
-        : value === '>' 
+        : value === '>'
           ? '-gt'
           : value === '>='
             ? '-ge'
-            : value === '<' 
+            : value === '<'
               ? '-lt'
-              : value === '<=' 
+              : value === '<='
                 ? '-le'
                 : value
   }
 
-  parseReturnString (type: Expression['type'], content: string | string[]) {
+  /**
+   * Formata retornos de strings para diversos tipo de uso (if, echo)
+   *
+   * @param {Expression['type']} type
+   * @param {(string | string[])} content
+   * @returns {string}
+   */
+  parseReturnString(type: Expression['type'], content: string | string[]): string {
     switch (type) {
     // Identifier são constantes: const num = 0
     case 'Identifier': return `"$${content}"`
-    // Literal são strings ou numbers
+      // Literal são strings ou numbers
     case 'Literal': return !Number.isNaN(Number(content)) ? `${content}` : `"${content}"`
     case 'CallExpression': return `$(${content})`
     case 'ArrayExpression': return `(${(content as string[]).join(' ')})`
@@ -185,19 +194,19 @@ export default class Transpiler {
    *
    * @param {IfStatement} expression
    */
-  parseIfStatement (expression: IfStatement) {
+  parseIfStatement(expression: IfStatement) {
     this.tabs = this.tabs + 1
 
     const test = this.parseExpression(expression.test)
     const consequent = this.parser(expression.consequent)
     const alternate = expression.alternate ? this.parseElseStatement(expression.alternate) : ''
     const code: string[] = []
-  
+
     code.push(`${this.tabs >= 1 ? '\n' : ''}if ${test}; then`)
     code.push(`${breakLines(consequent.map(content => `${getTabs(this.tabs)}${content}`).filter((content) => content.length === 0 ? false : true))}`)
     if (alternate.length > 0) code.push(alternate)
     code.push(`fi${this.tabs >= 1 ? '\n' : ''}`)
-  
+
     this.tabs = this.tabs - 1
     return breakLines(code)
   }
@@ -207,7 +216,7 @@ export default class Transpiler {
    * @param node 
    * @returns 
    */
-  parseElseStatement (node: Statement) {
+  parseElseStatement(node: Statement) {
     if (node.type !== 'IfStatement') return ''
     const content: string[] = []
     content.push(`elif [[ ${this.parseExpression(node.test)} ]]; then`)
@@ -247,15 +256,15 @@ export default class Transpiler {
    * @param {CallExpression} expression
    * @returns {string}
    */
-  parseCallExpression (expression: CallExpression): string {
+  parseCallExpression(expression: CallExpression): string {
     if (expression?.callee.type === 'MemberExpression') {
       const callee = expression.callee as MemberExpression
       const args = expression.arguments as (Expression | SpreadElement)[]
       return this.parseMemberExpression(callee, args)
     } else {
       const functionName = expression.callee.name
-      const args = expression.arguments.map((arg) => this.parseReturnString(arg.type ,this.parseExpression(arg))) as (string)[]
-  
+      const args = expression.arguments.map((arg) => this.parseReturnString(arg.type, this.parseExpression(arg))) as (string)[]
+
       return `${functionName} ${args.length > 0 ? args.join(' ') : ''}`
     }
   }
@@ -266,7 +275,7 @@ export default class Transpiler {
    * @param {Literal} expression
    * @returns {string}
    */
-  parseLiteral (expression: Literal): string {
+  parseLiteral(expression: Literal): string {
     return expression.value as string
   }
 
@@ -276,22 +285,22 @@ export default class Transpiler {
    * @param {Identifier} expression
    * @returns {string}
    */
-  parseIdentifier (expression: Identifier): string {
+  parseIdentifier(expression: Identifier): string {
     return expression.name as string
   }
 
-  
+
   /**
    * Usado em parseMetaProperty, constante endPropertyName pode ser um PrivateIdentifier
    *
    * @param {PrivateIdentifier} expression
    * @returns {string}
    */
-  parsePrivateIdentifier (expression: PrivateIdentifier): string {
+  parsePrivateIdentifier(expression: PrivateIdentifier): string {
     return expression.name
   }
 
-  parseBlockStatement (node: BlockStatement) {
+  parseBlockStatement(node: BlockStatement) {
     const code: string[] = []
 
     for (const statement of node.body) {
@@ -301,11 +310,16 @@ export default class Transpiler {
     return breakLines(code)
   }
 
-  parseFunctionDeclaration (node: FunctionDeclaration) {
+  /**
+   * Formata funções
+   *
+   * @param {FunctionDeclaration} node
+   * @returns {string}
+   */
+  parseFunctionDeclaration(node: FunctionDeclaration): string {
     const code: string[] = []
-    const module = (node as FunctionDeclaration)
-    const functionName = module.id?.name
-    const params = (module.params as Identifier[]).map(param => param.name) as string[]
+    const functionName = this.parseExpression(node.id) as string
+    const params = node.params.map((param) => this.parseExpression(param)) as []
 
     code.push(`${getTabs(this.tabs)}${functionName}() {`)
 
@@ -315,13 +329,13 @@ export default class Transpiler {
     }
 
     code.push(...this.parser(node.body).map(output => `${getTabs(this.tabs)}${output}`))
-    this.tabs = 0
+    this.tabs = this.tabs - 1
     code.push(getTabs(this.tabs) + '}\n')
 
     return breakLines(code)
   }
 
-  parseExpressionStatement (node: ExpressionStatement) {
+  parseExpressionStatement(node: ExpressionStatement) {
     const code: string[] = []
     const expression = node.expression
     if (expression === undefined) return ''
@@ -330,14 +344,14 @@ export default class Transpiler {
     code.push(this.parseExpression(expression) as string)
     return breakLines(code)
   }
-  
+
   /**
    * Formata os imports de arquivo, ainda em experimento, e não deve se usar para arquivos externos, apenas arquivos previamente processados por essa biblioteca!
    *
    * @param {ImportDeclaration} node
    * @returns {string}
    */
-  parseImportDeclaration (node: ImportDeclaration): string {
+  parseImportDeclaration(node: ImportDeclaration): string {
     const module = (node as ImportDeclaration)
     const path = dirname(resolve(this.options.path))
     // Pega o caminho relativo dos transformadores, com base no path do arquivo
@@ -346,7 +360,7 @@ export default class Transpiler {
 
     return code
   }
-  
+
   /**
    * Caso usado em functions isso ira formatar o return da função
    * 
@@ -367,26 +381,25 @@ export default class Transpiler {
    * @param {ReturnStatement} node
    * @returns {string}
    */
-  parseReturnStatement (node: ReturnStatement): string {
-    const element = this.parseExpression((node as ReturnStatement).argument)
+  parseReturnStatement(node: ReturnStatement): string {
+    const element = this.parseExpression(node.argument)
 
     return `echo ${this.parseReturnString(node.argument?.type ?? 'Literal', element)}`
   }
-  
+
   /**
    * Formata switchs
    *
    * @param {SwitchStatement} node
    * @returns {string}
    */
-  parseSwitchStatement (node: SwitchStatement): string {
+  parseSwitchStatement(node: SwitchStatement): string {
     const code: string[] = []
-    const module = (node as SwitchStatement)
-    const discriminant = this.parseExpression(module.discriminant)
+    const discriminant = this.parseExpression(node.discriminant)
 
     code.push(`${getTabs(this.tabs)}case $${discriminant} in`)
     this.tabs = this.tabs + 1
-    for (const caseNode of module.cases) {
+    for (const caseNode of node.cases) {
       this.tabs = this.tabs + 1
       if (caseNode.test) {
         const testValue = this.parseExpression(caseNode.test)
@@ -407,14 +420,14 @@ export default class Transpiler {
     this.tabs = this.tabs - 1
     return breakLines(code)
   }
-  
+
   /**
    * Formata Declarações
    *
    * @param {VariableDeclaration} node
    * @returns {string}
    */
-  parseVariableDeclaration (node: VariableDeclaration): string {
+  parseVariableDeclaration(node: VariableDeclaration): string {
     const code: string[] = []
     for (const variable of node.declarations) {
       const variableName = this.parseExpression(variable.id) as string
@@ -426,7 +439,7 @@ export default class Transpiler {
     }
     return breakLines(code)
   }
-  
+
   /**
    * Trata expressões, como: console.log
    *
@@ -434,7 +447,7 @@ export default class Transpiler {
    * @param {MemberExpression} expression
    * @returns {string}
    */
-  parseMemberExpression (expression: MemberExpression, args: (Expression | SpreadElement)[]): string {
+  parseMemberExpression(expression: MemberExpression, args: (Expression | SpreadElement)[]): string {
     const code: string[] = []
 
     if (expression.object.type === 'MetaProperty') {
@@ -444,23 +457,32 @@ export default class Transpiler {
     const object = (expression.object as Identifier).name
     const property = (expression.property as Identifier).name
 
-    switch (`${object}.${property}`) {
-    case 'console.log': {
-      for (const argument of args) {
-        const string = this.parseExpression(argument)
-        const result = this.parseReturnString(argument.type, string)
-        code.push(`echo ${result}`)
+    const exec = (input?: string) => {
+      switch (object) {
+      case 'console': {
+        code.push(new Console({ methodName: property, args: input }).parse())
+        break
       }
-      break
+      default: {
+        console.log(c.red(`[parseMemberExpression] Not identified: ${object}.${property}`))
+      }
+      }
     }
-    default: {
-      console.log(c.red(`[parseMemberExpression] Not identified: ${object}.${property}`))
+
+    if (args.length === 0) {
+      exec()
+    } else {
+      for (const argument of args) {
+        const input = this.parseReturnString(argument.type, this.parseExpression(argument))
+
+        exec(input)
+      }
     }
-    }
+
     return breakLines(code)
   }
 
-  
+
   /**
    * Usado em parseMemberExpression
    *
@@ -468,10 +490,10 @@ export default class Transpiler {
    * @param {(Expression | PrivateIdentifier)} prop
    * @returns {string}
    */
-  parseMetaProperty (expression: MetaProperty, prop: Expression | PrivateIdentifier): string {
+  parseMetaProperty(expression: MetaProperty, prop: Expression | PrivateIdentifier): string {
     const metaName = this.parseExpression(expression.meta)
     const propertyName = this.parseExpression(expression.property)
-    const endPropertyName =  this.parseExpression(prop)
+    const endPropertyName = this.parseExpression(prop)
 
     switch (`${metaName}.${propertyName}.${endPropertyName}`) {
     case 'import.meta.dirname': return '$(dirname "$(realpath "$0")")'
@@ -479,18 +501,18 @@ export default class Transpiler {
     }
     return ''
   }
-  
+
   /**
    * Formata arrays (listas)
    *
    * @param {ArrayExpression} expression
    * @returns {string}
    */
-  parseArrayExpression (expression: ArrayExpression): string[] {
+  parseArrayExpression(expression: ArrayExpression): string[] {
     const elements = expression.elements.map((element) => this.parseExpression(element))
     return (elements as string[])
   }
-  
+
   /**
    * Formata For of
    * 
@@ -500,16 +522,23 @@ export default class Transpiler {
    * for (const number of numbers) {
    *   console.log(number)
    * }
+   * 
+   * Output:
+   * numbers=(0 2 4)
+   * 
+   * for number in "${numbers[@]}"; do
+   *   echo "$number"
+   * done
    *
    * @param {ForOfStatement} node
    * @returns {string}
    */
-  parseForOfStatement (node: ForOfStatement): string {
+  parseForOfStatement(node: ForOfStatement): string {
     const code: string[] = []
     const left = this.parseStatement(node.left as VariableDeclaration)
     const right = this.parseExpression(node.right)
     const body = this.parser(node.body)
-    
+
     code.push(`\n${getTabs(this.tabs)}for ${left} in "$\{${right}[@]}"; do`)
     this.tabs = this.tabs + 1
     code.push(...body.map((content) => `${getTabs(this.tabs)}${content}`))
@@ -518,7 +547,7 @@ export default class Transpiler {
     return breakLines(code)
   }
 
-  parseBreakStatement (node: BreakStatement) {
+  parseBreakStatement(node: BreakStatement) {
     return node?.label === null ? '' : this.parseExpression(node.label)
   }
 
@@ -528,7 +557,7 @@ export default class Transpiler {
    * @param {TemplateLiteral} expression
    * @returns {string}
    */
-  parseTemplateLiteral (expression: TemplateLiteral): string {
+  parseTemplateLiteral(expression: TemplateLiteral): string {
 
     const code: string[] = []
 
@@ -540,7 +569,7 @@ export default class Transpiler {
      */
     for (const [index, element] of Object.entries(expression.quasis)) {
       code.push(element.value.raw)
-  
+
       if (Number(index) < expression.expressions.length) {
         const content = expression.expressions[Number(index)]
         const value = this.parseReturnString(content.type, this.parseExpression(content))
