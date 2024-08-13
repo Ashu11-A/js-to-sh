@@ -1,15 +1,27 @@
 import AbstractSyntaxTree from 'abstract-syntax-tree'
-import { writeFileSync } from 'fs'
+import { readFileSync, writeFileSync } from 'fs'
 import { readFile } from 'fs/promises'
-import { BinaryExpression, SpreadElement, BlockStatement, VariableDeclaration, BlockStatementBase, ImportDeclaration, ReturnStatement, CallExpression, DeclarationStatement, IfStatement, Expression, ExpressionStatement, FunctionDeclaration, Identifier, Literal, MemberExpression, Statement, SwitchStatement } from '../../node_modules/meriyah/src/estree.js'
+import { BinaryExpression, SpreadElement, PrivateIdentifier, MetaProperty, BlockStatement, VariableDeclaration, BlockStatementBase, ImportDeclaration, ReturnStatement, CallExpression, DeclarationStatement, IfStatement, Expression, ExpressionStatement, FunctionDeclaration, Identifier, Literal, MemberExpression, Statement, SwitchStatement } from '../../node_modules/meriyah/src/estree.js'
 import { breakLines } from '../libs/breakLines.js'
 import { getTabs } from '../libs/getTabs.js'
-import { join } from 'path'
+import { dirname, join, resolve } from 'path'
+import c from 'chalk'
+
+interface TransformOptions {
+  path: string
+}
 
 export class Transform {
   private numberIfs: number = 0
   private numberFuncts: number = 0
   public script: string[] = []
+  private readonly options: TransformOptions
+
+  constructor (options: TransformOptions) {
+    this.options = options
+
+    console.log(c.yellow(`Compiling: ${this.options.path}`))
+  }
 
   /**
    * Carrega o AST do javascript, gera um json com todas as informações necessarias para a conversão para shell script
@@ -18,8 +30,8 @@ export class Transform {
    * @param {string} path
    * @returns {Promise<(Statement | DeclarationStatement)>}
    */
-  async loader (path: string): Promise<(Statement | DeclarationStatement)> {
-    const code = await readFile(path, { encoding: 'utf-8' })
+  async loader (code?: string): Promise<(Statement | DeclarationStatement)> {
+    if (code === undefined) code = await readFile(this.options.path, { encoding: 'utf-8' })
     return new AbstractSyntaxTree(code)
   }
 
@@ -66,8 +78,7 @@ export class Transform {
       }
     }
 
-    writeFileSync('test.json', JSON.stringify(processed, null, 2))
-    writeFileSync('test.sh', breakLines(processed))
+    writeFileSync('test.json', JSON.stringify(ast, null, 2))
     return processed
   }
 
@@ -78,7 +89,7 @@ export class Transform {
    * @param {Expression} expression
    * @returns {(T | undefined)}
    */
-  parseExpression(expression: Expression | null): string {
+  parseExpression(expression: Expression | PrivateIdentifier | null): string {
     if (expression === null || expression === undefined) return ''
 
     const Expressions: Record<string, () => string> = {
@@ -91,6 +102,7 @@ export class Transform {
       JSXClosingElement: () => { return '' },
       JSXClosingFragment: () => { return '' },
       JSXExpressionContainer: () => { return '' },
+      PrivateIdentifier: () => { return this.parsePrivateIdentifier(expression as PrivateIdentifier)  },
       JSXOpeningElement: () => { return '' },
       JSXOpeningFragment: () => { return '' },
       JSXSpreadChild: () => { return '' },
@@ -139,15 +151,29 @@ export class Transform {
       ? '='
       : ['!==', '!='].includes(value)
         ? '!='
-        : value === '>' 
-          ? '-gt'
-          : value === '>='
-            ? '-ge'
-            : value === '<' 
-              ? '-lt'
-              : value === '<=' 
-                ? '-le'
-                : value
+        : value
+        // : value === '>' 
+        //   ? '-gt'
+        //   : value === '>='
+        //     ? '-ge'
+        //     : value === '<' 
+        //       ? '-lt'
+        //       : value === '<=' 
+        //         ? '-le'
+        //         : value
+  }
+
+  parseReturnString (type: Expression['type'], content: string) {
+    switch (type) {
+    // Identifier são constantes: const num = 0
+    case 'Identifier': return `"$${content}"`
+    // Literal são string: "Hello world"
+    case 'Literal': return `"${content}"`
+    case 'CallExpression': return `$(${content})`
+    }
+
+    console.log(c.red('[parseReturnString] Not identified: ', type, content))
+    return `"${content}"`
   }
 
   /**
@@ -197,7 +223,9 @@ export class Transform {
     const right = this.parseExpression(node.right)
     const operator = this.parseOperator(node.operator)
 
-    return `[[ "$\{${left}}" ${operator} "$\{${right}} ]]"`
+    console.log(c.blue(node.left.type, node.right.type))
+
+    return `$(( ${this.parseReturnString(node.left.type, left)} ${operator} ${this.parseReturnString(node.right.type, right)} ))`
   }
 
   /**
@@ -216,9 +244,11 @@ export class Transform {
       return this.parseMemberExpression(callee, args)
     } else {
       const functionName = expression.callee.name
-      const args = expression.arguments.map((arg) => this.parseExpression(arg)).join(' ')
+      const args = expression.arguments.map((arg) => this.parseExpression(arg))
+
+      console.log(expression.arguments, args)
   
-      return `${functionName} ${args.length > 0 ? `$\{${args}}` : ''}`
+      return `${functionName} ${args.length > 0 ? args.map((arg: string) => !Number.isNaN(Number(arg)) ? arg : `"${arg}"`).join(' ') : ''}`
     }
   }
 
@@ -240,6 +270,17 @@ export class Transform {
    */
   parseIdentifier (expression: Identifier): string {
     return expression.name as string
+  }
+
+  
+  /**
+   * Usado em parseMetaProperty, constante endPropertyName pode ser um PrivateIdentifier
+   *
+   * @param {PrivateIdentifier} expression
+   * @returns {string}
+   */
+  parsePrivateIdentifier (expression: PrivateIdentifier): string {
+    return expression.name
   }
 
   parseBlockStatement (node: BlockStatement) {
@@ -264,6 +305,7 @@ export class Transform {
     for (const [index, param] of Object.entries(params)) {
       code.push(`${getTabs(this.numberFuncts)}local ${param}=$${Number(index) + 1}`)
     }
+    console.log(c.red(JSON.stringify(node.body, null, 2)))
     code.push(...this.parser(node.body).map(output => `${getTabs(this.numberFuncts)}${output}`))
     this.numberFuncts = 0
     code.push(getTabs(this.numberFuncts) + '}\n')
@@ -289,9 +331,12 @@ export class Transform {
    */
   parseImportDeclaration (node: ImportDeclaration): string {
     const module = (node as ImportDeclaration)
-    const path = join(process.cwd(), 'src', `${(this.parseExpression(module.source) as string).replace('../../', '').replace('javascript', 'shellscript').replace('.js', '.sh')}`)
+    const path = dirname(resolve(this.options.path))
+    // Pega o caminho relativo dos transformadores, com base no path do arquivo
+    const filePath = join(path, this.parseExpression(module.source).replace('javascript', 'shellscript').replace('.js', '.sh'))
+    const code = readFileSync(filePath, { encoding: 'utf-8' })
 
-    return `source ${path}`
+    return code
   }
   
   /**
@@ -317,17 +362,7 @@ export class Transform {
   parseReturnStatement (node: ReturnStatement): string {
     const element = this.parseExpression((node as ReturnStatement).argument)
 
-    switch (node.argument?.type) {
-    // Identifier são constantes: const num = 0
-    case 'Identifier': {
-      return `echo $(( "${element}" ))`
-    }
-    // Literal são string: "Hello world"
-    case 'Literal': {
-      return `echo "${element}"`
-    }
-    }
-    return `echo $(( "${element}" ))` 
+    return `echo ${this.parseReturnString(node.argument?.type ?? 'Literal', element)}`
   }
   
   /**
@@ -336,7 +371,7 @@ export class Transform {
    * @param {SwitchStatement} node
    * @returns {string}
    */
-  parseSwitchStatement (node: SwitchStatement) {
+  parseSwitchStatement (node: SwitchStatement): string {
     const module = (node as SwitchStatement)
     const discriminant = this.parseExpression(module.discriminant)
 
@@ -366,9 +401,9 @@ export class Transform {
     for (const variable of node.declarations) {
       const variableName = this.parseExpression(variable.id)
       const intNode = this.parseExpression(variable.init)
+      const variableOutput = this.parseReturnString(variable.init?.type ?? 'Literal', intNode)
       
-
-      code.push(`${variableName}=${variable.init?.type === 'Literal' ? `"${intNode}"` : intNode}`)
+      code.push(`${variableName}=${variableOutput}`)
     }
     return code.join('\n')
   }
@@ -382,18 +417,45 @@ export class Transform {
    */
   parseMemberExpression (expression: MemberExpression, args: (Expression | SpreadElement)[]): string {
     const code: string[] = []
+
+    if (expression.object.type === 'MetaProperty') {
+      return this.parseMetaProperty(expression.object, expression.property)
+    }
+
     const object = (expression.object as Identifier).name
     const property = (expression.property as Identifier).name
-  
+
     switch (`${object}.${property}`) {
     case 'console.log': {
       for (const argument of args) {
-        const result = this.parseExpression(argument)
-        code.push(`echo "${result}"`)
+        console.log(argument)
+        const string = this.parseExpression(argument)
+        const result = this.parseReturnString(argument.type, string)
+        code.push(`echo ${result}`)
       }
       break
     }
     }
     return code.join('\n')
   }
+
+  
+  /**
+   * Usado em parseMemberExpression
+   *
+   * @param {MetaProperty} expression
+   * @param {(Expression | PrivateIdentifier)} prop
+   * @returns {string}
+   */
+  parseMetaProperty (expression: MetaProperty, prop: Expression | PrivateIdentifier): string {
+    const metaName = this.parseExpression(expression.meta)
+    const propertyName = this.parseExpression(expression.property)
+    const endPropertyName =  this.parseExpression(prop)
+
+    switch (`${metaName}.${propertyName}.${endPropertyName}`) {
+    case 'import.meta.dirname': return '$(dirname "$(realpath "$0")")'
+    }
+    return ''
+  }
+
 }

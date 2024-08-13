@@ -5,7 +5,7 @@
   "main": "src/app.ts",
   "type": "module",
   "scripts": {
-    "dev": "tsx src/app.ts",
+    "dev": "tsx src/app.ts && chmod 777 output/*",
     "lint": "eslint -c eslint.config.js"
   },
   "repository": {
@@ -20,6 +20,7 @@
   "homepage": "https://github.com/Ashu11-A/Ashu_eggs#readme",
   "dependencies": {
     "abstract-syntax-tree": "^2.22.0",
+    "chalk": "^5.3.0",
     "glob": "^11.0.0"
   },
   "devDependencies": {
