@@ -38,7 +38,18 @@ export default class Transpiler {
     return new AbstractSyntaxTree(code)
   }
 
-  parser(ast?: (Statement | DeclarationStatement) | null) {
+  parser (ast: (Statement | DeclarationStatement)) {
+    const code: string[] = []
+
+    code.push('#!/bin/bash')
+    code.push(...this.parseController(ast))
+
+    writeFileSync('test.json', JSON.stringify(ast, null, 2))
+
+    return code
+  }
+
+  parseController(ast?: (Statement | DeclarationStatement) | null) {
     const processed: string[] = []
     if (ast === undefined || ast === null) return processed
 
@@ -48,7 +59,6 @@ export default class Transpiler {
       }
     }
 
-    writeFileSync('test.json', JSON.stringify(ast, null, 2))
     return processed
   }
 
@@ -198,7 +208,7 @@ export default class Transpiler {
     this.tabs = this.tabs + 1
 
     const test = this.parseExpression(expression.test)
-    const consequent = this.parser(expression.consequent)
+    const consequent = this.parseController(expression.consequent)
     const alternate = expression.alternate ? this.parseElseStatement(expression.alternate) : ''
     const code: string[] = []
 
@@ -220,7 +230,7 @@ export default class Transpiler {
     if (node.type !== 'IfStatement') return ''
     const content: string[] = []
     content.push(`elif [[ ${this.parseExpression(node.test)} ]]; then`)
-    content.push(`${getTabs(this.tabs)}${this.parser(node.consequent)}`)
+    content.push(`${getTabs(this.tabs)}${this.parseController(node.consequent)}`)
 
     if (node.alternate) content.push(this.parseElseStatement(node.alternate))
     return breakLines(content)
@@ -305,7 +315,7 @@ export default class Transpiler {
     const code: string[] = []
 
     for (const statement of node.body) {
-      code.push(...this.parser(statement))
+      code.push(...this.parseController(statement))
     }
 
     return breakLines(code)
@@ -329,7 +339,7 @@ export default class Transpiler {
       code.push(`${getTabs(this.tabs)}local ${param}=$${Number(index) + 1}`)
     }
 
-    code.push(...this.parser(node.body).map(output => `${getTabs(this.tabs)}${output}`))
+    code.push(...this.parseController(node.body).map(output => `${getTabs(this.tabs)}${output}`))
     this.tabs = this.tabs - 1
     code.push(getTabs(this.tabs) + '}\n')
 
@@ -411,7 +421,7 @@ export default class Transpiler {
 
       this.tabs = this.tabs + 1
 
-      code.push(getTabs(this.tabs) + breakLines(this.parser(...caseNode.consequent)))
+      code.push(getTabs(this.tabs) + breakLines(this.parseController(...caseNode.consequent)))
       code.push(getTabs(this.tabs) + ';;')
 
       this.tabs = this.tabs - 1
@@ -471,7 +481,6 @@ export default class Transpiler {
     return breakLines(code)
   }
 
-
   /**
    * Usado em parseMemberExpression
    *
@@ -526,7 +535,7 @@ export default class Transpiler {
     const code: string[] = []
     const left = this.parseStatement(node.left as VariableDeclaration)
     const right = this.parseExpression(node.right)
-    const body = this.parser(node.body)
+    const body = this.parseController(node.body)
 
     code.push(`\n${getTabs(this.tabs)}for ${left} in "$\{${right}[@]}"; do`)
     this.tabs = this.tabs + 1
