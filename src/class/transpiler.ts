@@ -471,7 +471,7 @@ export default class Transpiler {
 
     switch (object) {
     case 'console': {
-      code.push(new Console({ methodName: property, variable: arg, transpiler: this }).parse())
+      code.push(new Console({ methodName: property, variable: arg }).parse())
       break
     }
     default: {

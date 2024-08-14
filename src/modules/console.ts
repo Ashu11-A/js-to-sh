@@ -1,15 +1,14 @@
-import { getTabs } from 'src/libs/getTabs.js'
-import Transpiler from '../class/transpiler.js'
 import { breakLines } from 'src/libs/breakLines.js'
+import { getTabs } from 'src/libs/getTabs.js'
 
 interface ConsoleOptions {
     methodName: string
     variable?: string
-    transpiler: Transpiler
 }
 
 export class Console {
   private readonly options: ConsoleOptions
+  static tabs: number = 0
 
   constructor(options: ConsoleOptions) {
     this.options = Object.assign(options, {
@@ -37,21 +36,21 @@ export class Console {
     case 'info':
     case 'warn':
     case 'error':
-      return `echo "${getTabs(this.options.transpiler.tabs)}${this.options.variable}"`
+      return `echo "${getTabs(Console.tabs)}${this.options.variable}"`
     case 'count':
       return this.handleCount()
     case 'countReset':
       return this.resetCount()
     case 'group': {
-      this.options.transpiler.tabs = this.options.transpiler.tabs + 1
+      Console.tabs = Console.tabs + 1
       return ''
     }
     case 'groupCollapsed': {
-      this.options.transpiler.tabs = this.options.transpiler.tabs + 1
+      Console.tabs = Console.tabs + 1
       return ''
     }
     case 'groupEnd': {
-      this.options.transpiler.tabs = this.options.transpiler.tabs - 1
+      Console.tabs = Console.tabs - 1
       return ''
     }
     case 'time':
@@ -73,7 +72,7 @@ export class Console {
     const variable = this.options.variable || 'default'
 
     code.push(`((count_${variable}++))`)
-    code.push(`echo "${getTabs(this.options.transpiler.tabs)}${variable}: $count_${variable}"`)
+    code.push(`echo "${getTabs(Console.tabs)}${variable}: $count_${variable}"`)
 
     return breakLines(code)
   }
@@ -88,7 +87,7 @@ export class Console {
     const variable = this.options.variable || 'default'
 
     code.push(`((count_${variable}=0))`)
-    code.push(`echo "${getTabs(this.options.transpiler.tabs)}${variable}: $count_${variable}"`)
+    code.push(`echo "${getTabs(Console.tabs)}${variable}: $count_${variable}"`)
 
     return breakLines(code)
   }
@@ -124,7 +123,7 @@ export class Console {
     const variable = this.options.variable || 'default'
 
     code.push(`((end_time_${variable}=$(date +%s%N)))`)
-    code.push(`echo "${getTabs(this.options.transpiler.tabs)}${variable}: $((($end_time_${variable}-start_time_${variable})/1000000)) ms"`)
+    code.push(`echo "${getTabs(Console.tabs)}${variable}: $((($end_time_${variable}-start_time_${variable})/1000000)) ms"`)
     
     return breakLines(code)
   }
