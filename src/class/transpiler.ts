@@ -22,8 +22,8 @@ export default class Transpiler {
   constructor(options: TransformOptions) {
     this.options = options
 
-    if (options.debug) console.log(c.green('Debug Mode!'))
-    console.log(c.yellow(`Compiling: ${terminalLink(basename(this.options.path), this.options.path)}`))
+    if (options.debug) console.log(c.hex('#f9f871')('Debug Mode!'))
+    console.log(c.hex('#845ec2')('Compiling:'), c.hex('#ffc75f')(terminalLink(basename(this.options.path), this.options.path)))
   }
 
   /**
@@ -89,7 +89,7 @@ export default class Transpiler {
       VariableDeclaration: () => { return this.parseVariableDeclaration(node as VariableDeclaration) },
       WithStatement: () => { console.log(c.red(`[parseExpression] Not identified: ${node.type}`)); return '' },
     }
-    console.log(c.blue(`Building: ${node.type}`))
+    console.log(c.hex('#008ac3')('Building:'), c.hex('#00c9a7')(node.type))
     const result = Declarations[node.type]()
 
     if (this.options.debug) return Array.isArray(result) ? result.push('# ' + node.type) : `${result} # ${node.type}\n`
@@ -150,8 +150,9 @@ export default class Transpiler {
       YieldExpression: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
       AssignmentPattern: function (): string | string[] { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
     }
-
+    
     const result = Expressions[expression.type]()
+    console.log(c.hex('#008ac3')('Formatting:'), c.hex('#00c9a7')(expression.type, c.grey('// ', result)))
     return result
   }
 
