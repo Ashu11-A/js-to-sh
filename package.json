@@ -29,6 +29,7 @@
     "@types/node": "^22.2.0",
     "eslint": "^9.9.0",
     "globals": "^15.9.0",
+    "meriyah": "^5.0.0",
     "tsx": "^4.17.0",
     "typescript": "^5.5.4",
     "typescript-eslint": "^8.0.1"

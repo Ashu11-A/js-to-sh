@@ -8,7 +8,7 @@
  * @param {string[]} array
  * @returns {string}
  */
-export function breakLines(array: string[]): string {
+export function breakLines(array: (string | number)[]): string {
   let result = ''
 
   const args = array.filter((arg) => arg.length !== 0)
