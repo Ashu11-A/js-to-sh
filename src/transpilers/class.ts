@@ -170,7 +170,7 @@ export class ParserClass {
    */
   parseNewExpression (expression: NewExpression): string {
     console.log(expression)
-    const args = expression.arguments.map((arg) => Transpiler.parseReturnString(arg.type, Transpiler.parseExpression(arg)))
+    const args = expression.arguments.map((arg) => Transpiler.parseReturnString(arg.type, Transpiler.parseExpression(arg) as string))
 
     return `${this.className}_new (ARG) ${args.join(' ')}`
   }

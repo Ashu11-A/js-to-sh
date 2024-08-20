@@ -15,10 +15,11 @@
 		"noUnusedParameters": true,
 		"noImplicitReturns": true,
 
-    "outDir": "./main",
-    "rootDir": "./src",
+    "outDir": "./dist",
+    "rootDir": "./",
     "baseUrl": "./",
+    "typeRoots": ["src/types/*.d.ts"]
   },
-  "include": ["src"],
-  "exclude": ["node_modules"]
+  "include": ["src", "tests"],
+  "exclude": ["node_modules", "dist"]
 }

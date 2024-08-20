@@ -2,7 +2,8 @@ import { access, constants } from 'fs/promises'
 
 export async function isWritable (path: string) {
   try {
-    return (await access(path, constants.W_OK))
+    await access(path, constants.W_OK)
+    return true
   } catch {
     return false
   }

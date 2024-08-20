@@ -11,10 +11,10 @@
 export function breakLines(array: (string | number)[]): string {
   let result = ''
 
-  const args = array.filter((arg) => arg.length !== 0)
+  const args = array.filter((arg) => typeof arg === 'string' ? arg.length !== 0 : true)
   
   for (let int = 0; int < args.length; int++) {
-    if (args[int].length === 0) continue
+    if (typeof args[int] === 'string' ? (args[int] as string).length === 0 : false) continue
 
     result += args[int]
     if (int !== args.length -1) {

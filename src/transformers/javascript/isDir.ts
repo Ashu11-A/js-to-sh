@@ -1,9 +1,10 @@
 import { stat } from 'fs/promises'
 
-export async function isDir(path: string) {
+global.isDir = async (path: string) => {
   try {
     return (await stat(path)).isDirectory()
   } catch {
     return false
   }
 }
+export {}

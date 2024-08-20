@@ -1,3 +1,4 @@
+import './index.js'
 import { glob } from 'glob'
 import { join } from 'path'
 import Transpiler from './class/transpiler.js'

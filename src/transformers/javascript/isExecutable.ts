@@ -1,9 +1,11 @@
 import { access, constants } from 'fs/promises'
 
-export async function isExecutable (path: string) {
+global.isExecutable = async (path: string) => {
   try {
-    return (await access(path, constants.X_OK))
+    await access(path, constants.X_OK)
+    return true
   } catch {
     return false
   }
 }
+export {}

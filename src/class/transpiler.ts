@@ -39,13 +39,14 @@ export default class Transpiler {
    */
   async loader(code?: string): Promise<(Statement | DeclarationStatement)> {
     if (code === undefined) code = await readFile(Transpiler.options.path, { encoding: 'utf-8' })
-    return new AbstractSyntaxTree(code)
+    const AST = new AbstractSyntaxTree(code)
+    return AST
   }
 
   static parser (ast: (Statement | DeclarationStatement)) {
     const code: string[] = []
 
-    code.push('#!/bin/bash')
+    code.push('#!/bin/bash\n')
     code.push(...this.parseController(ast))
 
     writeFileSync('test.json', JSON.stringify(ast, null, 2))
@@ -118,7 +119,7 @@ export default class Transpiler {
 
     const Expressions: Record<Expression['type'] | PrivateIdentifier['type'] | Parameter['type'], () => string | string[] | number> = {
       ArrowFunctionExpression: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
-      // AssignmentExpression: () => this.parseAssignmentExpression(expression as AssignmentExpression),
+      AssignmentExpression: () => { throw new Error('Chamada errada') },
       BinaryExpression: () => { return this.parseBinaryExpression(expression as BinaryExpression) },
       ConditionalExpression: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
       MetaProperty: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
@@ -131,7 +132,7 @@ export default class Transpiler {
       JSXOpeningFragment: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
       JSXSpreadChild: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
       LogicalExpression: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
-      NewExpression: () => this.parseNewExpression(expression as NewExpression),
+      NewExpression: () => { throw new Error('Chamada errada' )},
       RestElement: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
       SequenceExpression: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
       SpreadElement: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
@@ -143,7 +144,7 @@ export default class Transpiler {
       FunctionExpression: () => this.parseFunctionExpression(expression as FunctionExpression),
       Literal: () => { return this.parseLiteral(expression as Literal) },
       TemplateLiteral: () => this.parseTemplateLiteral(expression as TemplateLiteral),
-      MemberExpression: () => this.parseMemberExpression(expression as MemberExpression, []),
+      MemberExpression: () => this.parseMemberExpression(expression as MemberExpression),
       ArrayExpression: () => this.parseArrayExpression(expression as ArrayExpression),
       ArrayPattern: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
       Identifier: () => { return this.parseIdentifier(expression as Identifier) },

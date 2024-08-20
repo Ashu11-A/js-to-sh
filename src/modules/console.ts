@@ -1,7 +1,7 @@
 import { breakLines } from 'src/libs/breakLines.js'
 import { getTabs } from 'src/libs/getTabs.js'
 
-interface ConsoleOptions {
+export interface ConsoleOptions {
     methodName: string
     variable?: string
 }
