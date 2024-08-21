@@ -4,15 +4,15 @@ import { readFileSync, writeFileSync } from 'fs'
 import { readFile } from 'fs/promises'
 import { ClassDeclaration, NewExpression } from 'node_modules/meriyah/dist/src/estree.js'
 import { basename, dirname, join, resolve } from 'path'
-import { ParserClass } from 'src/transpilers/class.js'
+import { ParserClass } from '@/transpilers/class.js'
+import { ParseFunction } from '@/transpilers/funtion.js'
+import { ParseIFs } from '@/transpilers/ifElse.js'
+import { ParserSwitch } from '@/transpilers/switch.js'
 import terminalLink from 'terminal-link'
 import { ArrayExpression, BinaryExpression, BlockStatement, BlockStatementBase, BreakStatement, CallExpression, DeclarationStatement, Expression, ExpressionStatement, ForOfStatement, FunctionDeclaration, FunctionExpression, Identifier, IfStatement, ImportDeclaration, Literal, MemberExpression, MetaProperty, Parameter, PrivateIdentifier, ReturnStatement, SpreadElement, Statement, SwitchStatement, TemplateLiteral, VariableDeclaration } from '../../node_modules/meriyah/src/estree.js'
-import { breakLines } from '../libs/breakLines.js'
-import { getTabs } from '../libs/getTabs.js'
-import { Console } from '../modules/console.js'
-import { ParseFunction } from 'src/transpilers/funtion.js'
-import { ParseIFs } from 'src/transpilers/ifElse.js'
-import { ParserSwitch } from 'src/transpilers/switch.js'
+import { breakLines } from '@/libs/breakLines.js'
+import { getTabs } from '@/libs/getTabs.js'
+import { Console } from '@/modules/console.js'
 
 interface TransformOptions {
   path: string
@@ -26,8 +26,8 @@ export default class Transpiler {
   constructor(options: TransformOptions) {
     Transpiler.options = options
 
-    if (options.debug) console.log(c.hex('#f9f871')('Debug Mode!'))
-    console.log(c.hex('#845ec2')('Compiling:'), c.hex('#ffc75f')(terminalLink(basename(Transpiler.options.path), Transpiler.options.path)))
+    if (options.debug) console.debug(c.hex('#f9f871')('Debug Mode!'))
+    console.debug(c.hex('#845ec2')('Compiling:'), c.hex('#ffc75f')(terminalLink(basename(Transpiler.options.path), Transpiler.options.path)))
   }
 
   /**
@@ -51,7 +51,7 @@ export default class Transpiler {
 
     writeFileSync('test.json', JSON.stringify(ast, null, 2))
 
-    return code
+    return breakLines(code)
   }
 
   static parseController(ast?: (Statement | DeclarationStatement) | null) {
@@ -71,30 +71,30 @@ export default class Transpiler {
     const Declarations: Record<string, () => string | string[] | number> = {
       BlockStatement: () => { return this.parseBlockStatement(node as BlockStatement) },
       BreakStatement: () => this.parseBreakStatement(node as BreakStatement),
-      ContinueStatement: () => { console.log(c.red(`[parseExpression] Not identified: ${node.type}`)); return '' },
-      DebuggerStatement: () => { console.log(c.red(`[parseExpression] Not identified: ${node.type}`)); return '' },
-      ExportDefaultDeclaration: () => { console.log(c.red(`[parseExpression] Not identified: ${node.type}`)); return '' },
-      ExportAllDeclaration: () => { console.log(c.red(`[parseExpression] Not identified: ${node.type}`)); return '' },
-      ExportNamedDeclaration: () => { console.log(c.red(`[parseExpression] Not identified: ${node.type}`)); return '' },
+      ContinueStatement: () => { console.debug(c.red(`[parseExpression] Not identified: ${node.type}`)); return '' },
+      DebuggerStatement: () => { console.debug(c.red(`[parseExpression] Not identified: ${node.type}`)); return '' },
+      ExportDefaultDeclaration: () => { console.debug(c.red(`[parseExpression] Not identified: ${node.type}`)); return '' },
+      ExportAllDeclaration: () => { console.debug(c.red(`[parseExpression] Not identified: ${node.type}`)); return '' },
+      ExportNamedDeclaration: () => { console.debug(c.red(`[parseExpression] Not identified: ${node.type}`)); return '' },
       FunctionDeclaration: () => new ParseFunction(node as FunctionDeclaration).parse(),
-      EmptyStatement: () => { console.log(c.red(`[parseExpression] Not identified: ${node.type}`)); return '' },
+      EmptyStatement: () => { console.debug(c.red(`[parseExpression] Not identified: ${node.type}`)); return '' },
       ExpressionStatement: () => { return this.parseExpressionStatement(node as ExpressionStatement) },
       IfStatement: () => new ParseIFs(node as IfStatement).parseIfStatement(),
-      DoWhileStatement: () => { console.log(c.red(`[parseExpression] Not identified: ${node.type}`)); return '' },
-      ForInStatement: () => { console.log(c.red(`[parseExpression] Not identified: ${node.type}`)); return '' },
+      DoWhileStatement: () => { console.debug(c.red(`[parseExpression] Not identified: ${node.type}`)); return '' },
+      ForInStatement: () => { console.debug(c.red(`[parseExpression] Not identified: ${node.type}`)); return '' },
       ForOfStatement: () => this.parseForOfStatement(node as ForOfStatement),
-      ForStatement: () => { console.log(c.red(`[parseExpression] Not identified: ${node.type}`)); return '' },
-      WhileStatement: () => { console.log(c.red(`[parseExpression] Not identified: ${node.type}`)); return '' },
+      ForStatement: () => { console.debug(c.red(`[parseExpression] Not identified: ${node.type}`)); return '' },
+      WhileStatement: () => { console.debug(c.red(`[parseExpression] Not identified: ${node.type}`)); return '' },
       ImportDeclaration: () => { return this.parseImportDeclaration(node as ImportDeclaration) },
-      LabeledStatement: () => { console.log(c.red(`[parseExpression] Not identified: ${node.type}`)); return '' },
+      LabeledStatement: () => { console.debug(c.red(`[parseExpression] Not identified: ${node.type}`)); return '' },
       ReturnStatement: () => { return this.parseReturnStatement(node as ReturnStatement) },
       SwitchStatement: () => new ParserSwitch(node as SwitchStatement).parse(),
-      ThrowStatement: () => { console.log(c.red(`[parseExpression] Not identified: ${node.type}`)); return '' },
-      TryStatement: () => { console.log(c.red(`[parseExpression] Not identified: ${node.type}`)); return '' },
+      ThrowStatement: () => { console.debug(c.red(`[parseExpression] Not identified: ${node.type}`)); return '' },
+      TryStatement: () => { console.debug(c.red(`[parseExpression] Not identified: ${node.type}`)); return '' },
       VariableDeclaration: () => { return this.parseVariableDeclaration(node as VariableDeclaration) },
-      WithStatement: () => { console.log(c.red(`[parseExpression] Not identified: ${node.type}`)); return '' },
+      WithStatement: () => { console.debug(c.red(`[parseExpression] Not identified: ${node.type}`)); return '' },
     }
-    console.log(c.hex('#008ac3')('Building:'), c.hex('#00c9a7')(node.type))
+    console.debug(c.hex('#008ac3')('Building:'), c.hex('#00c9a7')(node.type))
     const func = Declarations[node.type]
 
     if (func === undefined) {
@@ -118,52 +118,52 @@ export default class Transpiler {
     if (expression === null || expression === undefined) return ''
 
     const Expressions: Record<Expression['type'] | PrivateIdentifier['type'] | Parameter['type'], () => string | string[] | number> = {
-      ArrowFunctionExpression: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
+      ArrowFunctionExpression: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
       AssignmentExpression: () => { throw new Error('Chamada errada') },
       BinaryExpression: () => { return this.parseBinaryExpression(expression as BinaryExpression) },
-      ConditionalExpression: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
-      MetaProperty: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
-      ChainExpression: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
-      JSXClosingElement: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
-      JSXClosingFragment: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
-      JSXExpressionContainer: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
+      ConditionalExpression: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
+      MetaProperty: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
+      ChainExpression: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
+      JSXClosingElement: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
+      JSXClosingFragment: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
+      JSXExpressionContainer: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
       PrivateIdentifier: () => { return this.parsePrivateIdentifier(expression as PrivateIdentifier) },
-      JSXOpeningElement: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
-      JSXOpeningFragment: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
-      JSXSpreadChild: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
-      LogicalExpression: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
-      NewExpression: () => { throw new Error('Chamada errada' )},
-      RestElement: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
-      SequenceExpression: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
-      SpreadElement: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
-      AwaitExpression: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
+      JSXOpeningElement: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
+      JSXOpeningFragment: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
+      JSXSpreadChild: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
+      LogicalExpression: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
+      NewExpression: () => ParserClass.parseNewExpression(expression as NewExpression),
+      RestElement: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
+      SequenceExpression: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
+      SpreadElement: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
+      AwaitExpression: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
       CallExpression: () => { return this.parseCallExpression(expression as CallExpression) },
-      ImportExpression: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
-      ClassExpression: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
+      ImportExpression: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
+      ClassExpression: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
       ClassDeclaration: () => new ParserClass(expression as ClassDeclaration).parseClassDeclaration(),
       FunctionExpression: () => this.parseFunctionExpression(expression as FunctionExpression),
       Literal: () => { return this.parseLiteral(expression as Literal) },
       TemplateLiteral: () => this.parseTemplateLiteral(expression as TemplateLiteral),
       MemberExpression: () => this.parseMemberExpression(expression as MemberExpression),
       ArrayExpression: () => this.parseArrayExpression(expression as ArrayExpression),
-      ArrayPattern: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
+      ArrayPattern: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
       Identifier: () => { return this.parseIdentifier(expression as Identifier) },
-      Import: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
-      JSXElement: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
-      JSXFragment: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
-      ObjectExpression: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
-      ObjectPattern: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
-      Super: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
-      ThisExpression: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
-      TaggedTemplateExpression: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
-      UnaryExpression: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
-      UpdateExpression: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
-      YieldExpression: () => { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
-      AssignmentPattern: function (): string | string[] { console.log(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
+      Import: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
+      JSXElement: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
+      JSXFragment: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
+      ObjectExpression: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
+      ObjectPattern: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
+      Super: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
+      ThisExpression: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
+      TaggedTemplateExpression: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
+      UnaryExpression: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
+      UpdateExpression: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
+      YieldExpression: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
+      AssignmentPattern: function (): string | string[] { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
     }
     
     const result = Expressions[expression.type]()
-    console.log(c.hex('#008ac3')('Formatting:'), c.hex('#00c9a7')(expression.type, c.grey('// ', result)))
+    console.debug(c.hex('#008ac3')('Formatting:'), c.hex('#00c9a7')(expression.type, c.grey('// ', result)))
     return result
   }
 
@@ -207,7 +207,7 @@ export default class Transpiler {
     case 'ArrayExpression': return `(${(content as string[]).join(' ')})`
     }
 
-    console.log(c.red('[parseReturnString] Not identified: ', type, content))
+    console.debug(c.red('[parseReturnString] Not identified: ', type, content))
     return `"${content}"`
   }
 
@@ -371,7 +371,10 @@ export default class Transpiler {
 
       // Veja parseNewExpression
       if (variableOutput.includes('(ARG)')) {
-        const className = this.parseExpression((variable.init as NewExpression).callee)
+        const className = this.parseExpression((variable.init as NewExpression).callee) as string
+        const parserClass = ParserClass.all.get(className) as ParserClass
+        parserClass.constant = variableName
+
         code.push(`\n${variableName}="${className}_${crypto.randomUUID().replaceAll('-', '')}"`)
         code.push((intNode as string).replaceAll('(ARG)', `$${variableName}`) + '\n')
         continue
@@ -383,7 +386,7 @@ export default class Transpiler {
   }
 
   /**
-   * Trata expressões, como: console.log
+   * Trata expressões, como: console.debug
    *
    * Usado em: parseCallExpression
    * @param {MemberExpression} expression
@@ -401,13 +404,35 @@ export default class Transpiler {
 
     if (object === undefined) return this.parseReturnString(expression.property.type, property)
 
+    /**
+     * Isso serve para achar se a variable declarada é o retorno de uma class
+     * Se a variavel é uma class, tipo: const pessoa = new Pessoa('Matheus', '18')
+     * A palavra "pessoa" armazena os dados da class, e deve ser passada para o metodo que está sendo usado
+     * Tipo: pessoa.comprimentar
+     * Será: Pessoa_cumprimentar $pessoa
+     * 
+     * Pessoa: é o nome da class
+     * cumprimentar: o nome do metodo
+     * $pessoa: referece a: "const pessoa = new Pessoa('Matheus', '18')"", e armazena as informações que serão usadas no metodo "cumprimentar"
+     */
+    const parserClass = ParserClass.all.entries()
+    let className: string | undefined
+    for (const [, classs] of parserClass) {
+      if (classs.constant === object) className = classs.className
+    }
+      
+    if (className !== undefined) {
+      code.push(`${className}_${property} $${object}`)
+      return breakLines(code)
+    }
+
     switch (object) {
     case 'console': {
       code.push(new Console({ methodName: property, variable: arg }).parse())
       break
     }
     default: {
-      console.log(c.red(`[parseMemberExpression] Not identified: ${object}.${property}`))
+      console.debug(c.red(`[parseMemberExpression] Not identified: ${object}.${property}`))
       code.push(`${object}.${property}`)
     }
     }
@@ -429,7 +454,7 @@ export default class Transpiler {
 
     switch (`${metaName}.${propertyName}.${endPropertyName}`) {
     case 'import.meta.dirname': return '$(dirname "$(realpath "$0")")'
-    default: console.log(c.red(`[parseMetaProperty] Not identified: ${metaName}.${propertyName}.${endPropertyName}`))
+    default: console.debug(c.red(`[parseMetaProperty] Not identified: ${metaName}.${propertyName}.${endPropertyName}`))
     }
     return ''
   }
@@ -452,7 +477,7 @@ export default class Transpiler {
    * const numbers = [0, 2, 4]
    * 
    * for (const number of numbers) {
-   *   console.log(number)
+   *   console.debug(number)
    * }
    * 
    * Output:

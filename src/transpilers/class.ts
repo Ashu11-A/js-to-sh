@@ -5,9 +5,11 @@ import { getTabs } from 'src/libs/getTabs.js'
 import c from 'chalk'
 
 export class ParserClass {
+  static all = new Map<string, ParserClass>() // será usado em parseVariableDeclaration
   AST: ClassDeclaration
   className: string
   // methodNames: string[]
+  constant!: string // setá definido em parseVariableDeclaration
   variables: string[]
   uuid: string = crypto.randomUUID().replaceAll('-', '')
 
@@ -15,6 +17,7 @@ export class ParserClass {
     this.AST = AST
     this.className = this.getClassName(this.AST)
     this.variables = this.getVariables(this.AST)
+    ParserClass.all.set(this.className, this)
   }
 
   private getClassName (classs: ClassDeclaration) {
@@ -168,10 +171,13 @@ export class ParserClass {
    * @param {NewExpression} expression
    * @returns {string}
    */
-  parseNewExpression (expression: NewExpression): string {
-    console.log(expression)
+  static parseNewExpression (expression: NewExpression): string {
+    const className = Transpiler.parseExpression(expression.callee) as string
     const args = expression.arguments.map((arg) => Transpiler.parseReturnString(arg.type, Transpiler.parseExpression(arg) as string))
 
-    return `${this.className}_new (ARG) ${args.join(' ')}`
+    /**
+     * (ARG): será substituido em parseVariableDeclaration, lá será definido o this.constant dessa class (ParserClass)
+     */
+    return `${className}_new (ARG) ${args.join(' ')}`
   }
 }

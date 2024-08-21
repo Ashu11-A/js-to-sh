@@ -1,9 +1,9 @@
-import './index.js'
+import '@/index.js'
 import { glob } from 'glob'
 import { join } from 'path'
-import Transpiler from './class/transpiler.js'
+import Transpiler from '@/class/transpiler.js'
 import { mkdir, writeFile } from 'fs/promises'
-import { breakLines } from './libs/breakLines.js'
+import { breakLines } from '@/libs/breakLines.js'
 import { existsSync } from 'fs'
 
 const files = await glob(['**/*.ts'], { cwd: join(process.cwd(), 'tests') })
