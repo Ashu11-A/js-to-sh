@@ -1,7 +1,7 @@
 import { AssignmentExpression, ClassBody, ClassDeclaration, FunctionExpression, MethodDefinition, NewExpression } from 'node_modules/meriyah/src/estree.js'
-import Transpiler from 'src/class/transpiler.js'
-import { breakLines } from 'src/libs/breakLines.js'
-import { getTabs } from 'src/libs/getTabs.js'
+import { Transpiler } from '@/class/transpiler.js'
+import { breakLines } from '@/libs/breakLines.js'
+import { getTabs } from '@/libs/getTabs.js'
 import c from 'chalk'
 
 export class ParserClass {
@@ -95,7 +95,7 @@ export class ParserClass {
       //   break
       // }
       default: {
-        console.log(c.red(`[parseClassBody] ${element.type}`))
+        console.debug(c.red(`[parseClassBody] ${element.type}`))
       }
       }
     }

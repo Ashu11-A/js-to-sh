@@ -1,13 +1,33 @@
 {
-  "name": "ashu_eggs",
+  "name": "tjss",
   "description": "<div align=\"center\">",
   "version": "1.0.0",
-  "main": "src/app.ts",
+  "main": "dist/cli.js",
   "type": "module",
+  "bin": {
+    "tjss": "dist/cli.js",
+    "transpiler-js-shell": "dist/cli.js",
+    "js-to-sh": "dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "imports": {
+    "@/*": [
+      "src/*"
+    ]
+  },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "cli": "tsx src/cli.ts",
-    "dev": "tsx src/app.ts && chmod 777 output/*",
-    "build": "tsc && tsc-alias -p tsconfig.json",
+    "test": "tsx test/app.ts && chmod 777 output/*",
+    "build": "rimraf dist && tsc -p ./tsconfig.build.json && tsc-alias -p ./tsconfig.build.json",
+    "build:tsup": "rimraf dist && npx tsx build.ts && tsc-alias -p ./tsconfig.build.json",
     "lint": "eslint -c eslint.config.js"
   },
   "repository": {
@@ -32,7 +52,9 @@
     "eslint": "^9.9.0",
     "globals": "^15.9.0",
     "meriyah": "^5.0.0",
+    "rimraf": "^6.0.1",
     "tsc-alias": "^1.8.10",
+    "tsup": "^8.2.4",
     "tsx": "^4.17.0",
     "typescript": "^5.5.4",
     "typescript-eslint": "^8.0.1"

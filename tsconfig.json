@@ -10,7 +10,7 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "strict": true,
-    "declaration": false,
+    "declaration": true,
 
     "noUnusedLocals": true,
     "noUnusedParameters": true,
@@ -24,6 +24,6 @@
     },
     "typeRoots": ["src/types/*.d.ts"]
   },
-  "include": ["src", "tests"],
+  "include": ["src", "test", "build.ts"],
   "exclude": ["node_modules", "dist"]
 }

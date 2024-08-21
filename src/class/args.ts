@@ -1,4 +1,5 @@
 import { Arg } from '@/types/args.js'
+import c from 'chalk'
 
 export class Args {
 
@@ -38,32 +39,36 @@ export class Args {
 
   quickSort (args: Arg[]): Arg[] {
     return args.sort((A, B) => A.rank - B.rank)
-    if (args.length <= 1) return args
+  }
 
-    // Seleciona um elemento como pivô (o elemento pivo será usado como comparação)
-    const pivo = args[0]
-    const maior = []
-    const menor = []
+  help () {
+    const output: string[] = []
+    output.push(`Usage: ${c.yellowBright('tjss')} ${c.magentaBright('[options]')}\n`)
+    output.push('  Options:\n')
 
-    for (let int = 1; int < args.length; int++) {
-      // Se o elemento atual for maior que o pivô
-      if (args[int].rank > pivo.rank) {
-        maior.push(args[int])
-        continue
-      }
-      menor.push(args[int])
+    const maxAliasLength = Math.max(...this.args.map(arg => arg.alias.join(', ').length))
+    const maxCommandLength = Math.max(...this.args.map(arg => `--${arg.command}`.length))
+
+    for (const arg of this.args) {
+      const alias = arg.alias.join(', ')
+      const command = `--${arg.command}`
+      const aliasPadding = ' '.repeat(maxAliasLength - alias.length)
+      const commandPadding = ' '.repeat(maxCommandLength - command.length)
+
+      output.push(`   ${c.blueBright(alias)}${aliasPadding} ${c.white(command)}${commandPadding} ${c.green(arg.description)}`)
     }
-
-    // Concatena recursivamente as arrays ordenadas menor + pivô + maior
-    return this.quickSort(menor).concat(pivo, maior)
+    return output.join('\n')
   }
 
   async run(input: string[]) {
     this.validate(input)
 
     const args = this.quickSort(this.formatAliasToCommand(input))
+    if (args.length === 0) {
+      console.log(this.help())
+      return
+    }
     for (const arg of args) {
-      console.log(`Running ${arg.command}`)
       await arg.function(arg.string)
     }
   }

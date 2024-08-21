@@ -1,32 +1,46 @@
-import AbstractSyntaxTree from 'abstract-syntax-tree'
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import c from 'chalk'
-import { readFileSync, writeFileSync } from 'fs'
-import { readFile } from 'fs/promises'
-import { ClassDeclaration, NewExpression } from 'node_modules/meriyah/dist/src/estree.js'
-import { basename, dirname, join, resolve } from 'path'
+import { breakLines } from '@/libs/breakLines.js'
+import { getTabs } from '@/libs/getTabs.js'
+import { Console } from '@/modules/console.js'
 import { ParserClass } from '@/transpilers/class.js'
 import { ParseFunction } from '@/transpilers/funtion.js'
 import { ParseIFs } from '@/transpilers/ifElse.js'
 import { ParserSwitch } from '@/transpilers/switch.js'
+// @ts-ignore
+import AbstractSyntaxTree from 'abstract-syntax-tree'
+import { readFileSync } from 'fs'
+import { readFile } from 'fs/promises'
+import { ClassDeclaration, NewExpression } from 'node_modules/meriyah/dist/src/estree.js'
+import { basename, dirname, join, resolve } from 'path'
 import terminalLink from 'terminal-link'
 import { ArrayExpression, BinaryExpression, BlockStatement, BlockStatementBase, BreakStatement, CallExpression, DeclarationStatement, Expression, ExpressionStatement, ForOfStatement, FunctionDeclaration, FunctionExpression, Identifier, IfStatement, ImportDeclaration, Literal, MemberExpression, MetaProperty, Parameter, PrivateIdentifier, ReturnStatement, SpreadElement, Statement, SwitchStatement, TemplateLiteral, VariableDeclaration } from '../../node_modules/meriyah/src/estree.js'
-import { breakLines } from '@/libs/breakLines.js'
-import { getTabs } from '@/libs/getTabs.js'
-import { Console } from '@/modules/console.js'
 
 interface TransformOptions {
   path: string
+  cwd?: string
   debug?: boolean
 }
 
-export default class Transpiler {
+export class Transpiler {
   static tabs: number = 0
   static options: TransformOptions
 
   constructor(options: TransformOptions) {
-    Transpiler.options = options
+    Transpiler.options = {
+      ...options,
+      path: join(options.cwd ?? '', options.path)
+    }
 
-    if (options.debug) console.debug(c.hex('#f9f871')('Debug Mode!'))
+    global.console = {
+      ...global.console,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      debug(message?: any, ...optionalParams: any[]) {
+        if (Transpiler.options.debug) process.stdout.write(`${message} ${optionalParams.join('\n')}\n`)
+      },
+    }
+
+    console.debug(c.hex('#f9f871')('Debug Mode!'))
     console.debug(c.hex('#845ec2')('Compiling:'), c.hex('#ffc75f')(terminalLink(basename(Transpiler.options.path), Transpiler.options.path)))
   }
 
@@ -48,8 +62,6 @@ export default class Transpiler {
 
     code.push('#!/bin/bash\n')
     code.push(...this.parseController(ast))
-
-    writeFileSync('test.json', JSON.stringify(ast, null, 2))
 
     return breakLines(code)
   }
