@@ -1,7 +1,7 @@
 {
   "name": "js-to-sh",
   "description": "Turn javascript code into shellscript",
-  "version": "1.0.5",
+  "version": "1.0.7",
   "main": "dist/cli.js",
   "type": "module",
   "bin": {
@@ -9,10 +9,28 @@
     "transpiler-js-shell": "dist/cli.js",
     "js-to-sh": "dist/cli.js"
   },
+  "typesVersions": {
+    "*": {
+      ".": [
+        "./dist/index.d.ts"
+      ],
+      "globals": [
+        "./dist/types/globals.d.ts"
+      ]
+    }
+  },
   "exports": {
     ".": {
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
+    },
+    "./globals": {
+      "types": "./dist/types/globals.d.ts",
+      "import": "./dist/types/globals.js"
+    },
+    "./loader": {
+      "types": "./dist/loader/index.d.ts",
+      "import": "./dist/loader/index.js"
     }
   },
   "imports": {

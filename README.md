@@ -60,6 +60,7 @@ Usage: tjss [options]
 ##### ⚠️ | Warning: Currently only use this package in projects that support ESM natively, it won't work with commonjs (CJS)!
 
 ```ts
+import 'js-to-sh/loader' // this should be in the main file of your project
 import { Transpiler } from 'js-to-sh'
 
 const AST = await new Transpiler({ path: 'src/test.ts' }).loader()
