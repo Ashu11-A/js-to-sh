@@ -1,3 +1,4 @@
+import { cp } from 'fs/promises'
 import { build } from 'tsup'
 
 await build({
@@ -12,3 +13,6 @@ await build({
   dts: true,
   // minify: true
 })
+
+const path = 'src/transformers/shellscript'
+await cp(path, path.replace('src', 'dist'), { recursive: true, preserveTimestamps: true })
