@@ -1,6 +1,6 @@
 import { access, constants } from 'fs/promises'
 
-global.isReadable = async (path: string) => {
+const isReadable = async (path: string) => {
   try {
     await access(path, constants.R_OK)
     return true
@@ -8,3 +8,5 @@ global.isReadable = async (path: string) => {
     return false
   }
 }
+global.isReadable = isReadable
+export { isReadable }

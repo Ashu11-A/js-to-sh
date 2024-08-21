@@ -1,0 +1,8 @@
+/node_modules
+/output
+/arquived
+/test
+/src
+/package-lock.json
+/eslint.config.js
+/build.ts

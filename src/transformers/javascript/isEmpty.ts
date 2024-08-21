@@ -1,5 +1,5 @@
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-global.isEmpty =  (content: any) => {
+const isEmpty =  (content: any) => {
   switch (typeof content) {
   case 'undefined': {
     return true
@@ -9,4 +9,5 @@ global.isEmpty =  (content: any) => {
   }
   }
 }
-export {}
+global.isEmpty = isEmpty
+export { isEmpty }

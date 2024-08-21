@@ -15,6 +15,7 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noImplicitReturns": true,
+    "allowJs": true,
 
     "outDir": "./dist",
     "rootDir": "./",
@@ -22,7 +23,7 @@
     "paths": {
       "@/*": ["./src/*"]
     },
-    "typeRoots": ["src/types/*.d.ts"]
+    "typeRoots": ["src/types/**/*.d.ts"]
   },
   "include": ["src", "test", "build.ts"],
   "exclude": ["node_modules", "dist"]
