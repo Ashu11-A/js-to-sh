@@ -2,12 +2,14 @@ import { Arg } from '@/types/args.js'
 import c from 'chalk'
 
 export class Args {
-
-  constructor(public args: Arg[]) {}
+  static args: Arg[] = []
+  constructor(args: Arg[]) {
+    Args.args = args
+  }
 
   validate(input: string[]) {
     for (const arg of input.filter((arg) => arg.includes('-'))) {
-      const allArgs = this.args.flatMap(({ command, alias }) => [command, ...alias.map((alia) => alia || command)])
+      const allArgs = Args.args.flatMap(({ command, alias }) => [command, ...alias.map((alia) => alia || command)])
       if (!allArgs.includes(arg)) throw new Error(`Not found arg ${arg}, try --help`)
     }
   }
@@ -16,7 +18,7 @@ export class Args {
     const newArgs: Array<Arg> = []
 
     for (let argIndex = 0; argIndex < input.length; argIndex++) {
-      for (const arg of this.args) {
+      for (const arg of Args.args) {
         if (arg.alias.includes(input[argIndex]) || input[argIndex] === arg.command) {
           if (arg?.hasString) {
             // caso a proxima arg seja não seja uma strings, e sim uma arg
@@ -41,15 +43,15 @@ export class Args {
     return args.sort((A, B) => A.rank - B.rank)
   }
 
-  help () {
+  static help () {
     const output: string[] = []
     output.push(`Usage: ${c.yellowBright('tjss')} ${c.magentaBright('[options]')}\n`)
     output.push('  Options:\n')
 
-    const maxAliasLength = Math.max(...this.args.map(arg => arg.alias.join(', ').length))
-    const maxCommandLength = Math.max(...this.args.map(arg => `--${arg.command}`.length))
+    const maxAliasLength = Math.max(...Args.args.map(arg => arg.alias.join(', ').length))
+    const maxCommandLength = Math.max(...Args.args.map(arg => `--${arg.command}`.length))
 
-    for (const arg of this.args) {
+    for (const arg of Args.args) {
       const alias = arg.alias.join(', ')
       const command = `--${arg.command}`
       const aliasPadding = ' '.repeat(maxAliasLength - alias.length)
@@ -65,7 +67,7 @@ export class Args {
 
     const args = this.quickSort(this.formatAliasToCommand(input))
     if (args.length === 0) {
-      console.log(this.help())
+      console.log(Args.help())
       return
     }
     for (const arg of args) {

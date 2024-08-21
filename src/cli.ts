@@ -21,6 +21,16 @@ const code = new Map<string, string>()
 
 new Args([
   {
+    alias: ['-h'],
+    command: 'help',
+    description: 'Show all available arguments',
+    rank: 0,
+    async function() {
+      console.log(Args.help())
+      process.exit()
+    },
+  },
+  {
     alias: ['-D'],
     command: 'debug',
     description: 'Activates debug mode.',
