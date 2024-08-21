@@ -25,6 +25,6 @@
     },
     "typeRoots": ["src/types/**/*.d.ts"]
   },
-  "include": ["src", "test", "build.ts"],
+  "include": ["src", "test"],
   "exclude": ["node_modules", "dist"]
 }
