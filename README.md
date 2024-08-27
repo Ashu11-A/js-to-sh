@@ -8,7 +8,6 @@
 
 ![Comitts Year](https://img.shields.io/github/commit-activity/y/Ashu11-A/AST-Shell?style=for-the-badge&colorA=302D41&colorB=f9e2af&logoColor=f9e2af&authorFilter=Ashu11-A&label=COMMIT+ACTIVITY)
 ![reposize-info](https://img.shields.io/github/languages/code-size/Ashu11-A/AST-Shell?style=for-the-badge&colorA=302D41&colorB=90dceb)
-![GitHub repo file or directory count](https://img.shields.io/github/directory-file-count/Ashu11-A/AST-Shell?type=file&style=for-the-badge&colorA=302D41&colorB=b4befe)
 
 </div>
 
