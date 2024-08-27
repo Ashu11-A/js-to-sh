@@ -5,11 +5,14 @@ import { mkdir, writeFile } from 'fs/promises'
 import { glob } from 'glob'
 import { join } from 'path'
 
-const files = await glob(['**/*.ts'], { cwd: join(import.meta.dirname, 'modules') })
+const path = join(import.meta.dirname, 'modules')
+const files = await glob(['**/*.ts'], { cwd: path })
+
+console.log(files)
 
 for (const file of files) {
-  const path = join(import.meta.dirname, 'modules', file)
-  const AST = await new Transpiler({ path, debug: false }).loader()
+  const pathFile = join(path, file)
+  const AST = await new Transpiler({ path: pathFile, debug: true }).loader()
   const output = Transpiler.parser(AST)
 
   if (!existsSync('output')) await mkdir('output')

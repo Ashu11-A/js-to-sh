@@ -1,8 +1,7 @@
-import { ArrowFunctionExpression, CallExpression, FunctionDeclaration } from 'node_modules/meriyah/src/estree.js'
 import { Transpiler } from '@/class/transpiler.js'
 import { breakLines } from '@/libs/breakLines.js'
 import { getTabs } from '@/libs/getTabs.js'
-import chalk from 'chalk'
+import { ArrowFunctionExpression, CallExpression, FunctionDeclaration } from 'node_modules/meriyah/src/estree.js'
 
 export class ParseFunction {
   AST: FunctionDeclaration
