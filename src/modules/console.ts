@@ -1,3 +1,4 @@
+import { Transpiler } from '@/class/transpiler.js'
 import { breakLines } from '@/libs/breakLines.js'
 import { getTabs } from '@/libs/getTabs.js'
 
@@ -36,7 +37,7 @@ export class Console {
     case 'info':
     case 'warn':
     case 'error':
-      return `echo "${getTabs(Console.tabs)}${this.options.variable}"`
+      return `${getTabs(Transpiler.tabs)}echo "${getTabs(Console.tabs)}${this.options.variable}"`
     case 'count':
       return this.handleCount()
     case 'countReset':
