@@ -148,8 +148,8 @@ export class Transpiler {
       RestElement: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
       SequenceExpression: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
       SpreadElement: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
-      AwaitExpression: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
-      CallExpression: () => { return this.parseCallExpression(expression as CallExpression) },
+      AwaitExpression: () => this.parseAwaitExpression(expression as AwaitExpression),
+      CallExpression: () => this.parseCallExpression(expression as CallExpression),
       ImportExpression: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
       ClassExpression: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
       ClassDeclaration: () => new ParserClass(expression as ClassDeclaration).parseClassDeclaration(),
@@ -173,8 +173,13 @@ export class Transpiler {
       YieldExpression: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
       AssignmentPattern: function (): string | string[] { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
     }
+    const func = Expressions[expression.type]
+
+    if (func === undefined) {
+      return this.parseStatement(expression as Statement)
+    }
     
-    const result = Expressions[expression.type]()
+    const result = func()
     console.debug(c.hex('#008ac3')('Formatting:'), c.hex('#00c9a7')(expression.type, c.grey('// ', result)))
     return result
   }
