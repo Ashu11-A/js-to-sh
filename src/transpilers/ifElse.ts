@@ -37,9 +37,19 @@ export class ParseIFs {
    * @returns 
    */
   parseElseStatement(expression: Statement) {
-    if (expression.type !== 'IfStatement') return ''
-
     const content: string[] = []
+    if (expression.type !== 'IfStatement') {
+      content.push(getTabs(Transpiler.tabs - 1) + 'else')
+      const result = Transpiler.parseStatement(expression)
+
+      if (Array.isArray(result)) {
+        result.map((result) => content.push(getTabs(Transpiler.tabs) + result))
+      } else {
+        content.push(getTabs(Transpiler.tabs) + String(result))
+      }
+
+      return breakLines(content)
+    }
   
     content.push(`elif [[ ${Transpiler.parseExpression(expression.test)} ]]; then`)
     content.push(`${getTabs(Transpiler.tabs)}${Transpiler.parseController(expression.consequent)}`)
