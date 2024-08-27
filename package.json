@@ -1,7 +1,7 @@
 {
   "name": "js-to-sh",
   "description": "Turn javascript code into shellscript",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "main": "dist/cli.js",
   "type": "module",
   "bin": {
