@@ -11,7 +11,7 @@ import { ParserSwitch } from '@/transpilers/switch.js'
 import AbstractSyntaxTree from 'abstract-syntax-tree'
 import { readFileSync } from 'fs'
 import { readFile } from 'fs/promises'
-import { ClassDeclaration, NewExpression } from 'node_modules/meriyah/dist/src/estree.js'
+import { ArrowFunctionExpression, AwaitExpression, ClassDeclaration, NewExpression } from 'node_modules/meriyah/dist/src/estree.js'
 import { basename, dirname, join, resolve } from 'path'
 import terminalLink from 'terminal-link'
 import { ArrayExpression, BinaryExpression, BlockStatement, BlockStatementBase, BreakStatement, CallExpression, DeclarationStatement, Expression, ExpressionStatement, ForOfStatement, FunctionDeclaration, FunctionExpression, Identifier, IfStatement, ImportDeclaration, Literal, MemberExpression, MetaProperty, Parameter, PrivateIdentifier, ReturnStatement, SpreadElement, Statement, SwitchStatement, TemplateLiteral, VariableDeclaration } from '../../node_modules/meriyah/src/estree.js'
@@ -103,7 +103,7 @@ export class Transpiler {
       SwitchStatement: () => new ParserSwitch(node as SwitchStatement).parse(),
       ThrowStatement: () => { console.debug(c.red(`[parseExpression] Not identified: ${node.type}`)); return '' },
       TryStatement: () => { console.debug(c.red(`[parseExpression] Not identified: ${node.type}`)); return '' },
-      VariableDeclaration: () => { return this.parseVariableDeclaration(node as VariableDeclaration) },
+      VariableDeclaration: () => this.parseVariableDeclaration(node as VariableDeclaration),
       WithStatement: () => { console.debug(c.red(`[parseExpression] Not identified: ${node.type}`)); return '' },
     }
     console.debug(c.hex('#008ac3')('Building:'), c.hex('#00c9a7')(node.type))
@@ -130,7 +130,7 @@ export class Transpiler {
     if (expression === null || expression === undefined) return ''
 
     const Expressions: Record<Expression['type'] | PrivateIdentifier['type'] | Parameter['type'], () => string | string[] | number> = {
-      ArrowFunctionExpression: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
+      ArrowFunctionExpression: () => ParseFunction.parseArrowFunctionExpression(expression as ArrowFunctionExpression),
       AssignmentExpression: () => { throw new Error('Chamada errada') },
       BinaryExpression: () => { return this.parseBinaryExpression(expression as BinaryExpression) },
       ConditionalExpression: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
@@ -217,6 +217,7 @@ export class Transpiler {
     case 'Literal': return !Number.isNaN(Number(content)) ? `${content}` : `"${content}"`
     case 'CallExpression': return `$(${content})`
     case 'ArrayExpression': return `(${(content as string[]).join(' ')})`
+    case 'ArrowFunctionExpression': return `${content}`
     }
 
     console.debug(c.red('[parseReturnString] Not identified: ', type, content))
@@ -376,7 +377,12 @@ export class Transpiler {
     const code: string[] = []
     for (const variable of node.declarations) {
       const variableName = this.parseExpression(variable.id) as string
+
+      // Caso seja um ArrowFunctionExpression, então será uma função, por isso adicione a indentação
+      if (variable.init?.type === 'ArrowFunctionExpression') this.tabs++
       const intNode = this.parseExpression(variable.init) as string
+      if (variable.init?.type === 'ArrowFunctionExpression') this.tabs--
+
       const variableOutput = this.parseReturnString(variable.init?.type ?? 'Literal', intNode)
 
       if (intNode.length === 0) { code.push(variableName); continue }
@@ -392,7 +398,25 @@ export class Transpiler {
         continue
       }
 
-      code.push(`${variableName}=${variableOutput}`)
+      /**
+       * Em ArrowFunctionExpression, a declaração de uma constante é irrelevante, por isso declaramos ela como se fosse
+       * uma function normal
+       * 
+       * Input:
+       * const func = () => console.log('ArrowFunctionExpression')
+       * 
+       * Output:
+       * function func() {
+       *   echo "ArrowFunctionExpression"
+       * }
+       */
+      if (variable.init?.type === 'ArrowFunctionExpression') {
+        code.push(`function ${variableName} () {`)
+        code.push(variableOutput)
+        code.push('}')
+      } else {
+        code.push(`${variableName}=${variableOutput}`)
+      }
     }
     return breakLines(code)
   }

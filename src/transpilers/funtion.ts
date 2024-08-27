@@ -1,7 +1,8 @@
-import { FunctionDeclaration } from 'node_modules/meriyah/src/estree.js'
+import { ArrowFunctionExpression, CallExpression, FunctionDeclaration } from 'node_modules/meriyah/src/estree.js'
 import { Transpiler } from '@/class/transpiler.js'
 import { breakLines } from '@/libs/breakLines.js'
 import { getTabs } from '@/libs/getTabs.js'
+import chalk from 'chalk'
 
 export class ParseFunction {
   AST: FunctionDeclaration
@@ -34,6 +35,31 @@ export class ParseFunction {
     code.push(...Transpiler.parseController(this.AST.body).map(output => `${getTabs(Transpiler.tabs)}${output}`))
     Transpiler.tabs--
     code.push(getTabs(Transpiler.tabs) + '}\n')
+
+    return breakLines(code)
+  }
+
+  /**
+   * Formata funções declaradas em constantes, aqui é somente uma ponte, isso vai para CallExpression
+   * 
+   * Input:
+   * const func = () => console.log('ArrowFunctionExpression')
+   * 
+   * Output:
+   * function func() {
+   *   echo "ArrowFunctionExpression"
+   * }
+   */
+  static parseArrowFunctionExpression (expression: ArrowFunctionExpression) {
+    const code: string[] = []
+    const result = Transpiler.parseExpression(expression.body as CallExpression) as string
+    const params = expression.params.map((param) => Transpiler.parseExpression(param))
+  
+    for (const [index, param] of Object.entries(params)) {
+      code.push(getTabs(Transpiler.tabs) + `local ${param}=$${Number(index) + 1}`)
+    }
+    
+    code.push(result)
 
     return breakLines(code)
   }
