@@ -6,3 +6,5 @@
 /package-lock.json
 /eslint.config.js
 /build.ts
+/.github
+/.vscode

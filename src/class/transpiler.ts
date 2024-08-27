@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import c from 'chalk'
 import { breakLines } from '@/libs/breakLines.js'
 import { getTabs } from '@/libs/getTabs.js'
 import { Console } from '@/modules/console.js'
@@ -7,6 +6,7 @@ import { ParserClass } from '@/transpilers/class.js'
 import { ParseFunction } from '@/transpilers/funtion.js'
 import { ParseIFs } from '@/transpilers/ifElse.js'
 import { ParserSwitch } from '@/transpilers/switch.js'
+import c from 'chalk'
 // @ts-ignore
 import AbstractSyntaxTree from 'abstract-syntax-tree'
 import { readFileSync } from 'fs'
@@ -576,5 +576,19 @@ export class Transpiler {
     }
 
     return code.join('')
+  }
+  
+  /**
+   * Adiciona wait ao código para esperar o seu resultado.
+   *
+   * @static
+   * @param {AwaitExpression} expression
+   * @returns {string}
+   */
+  static parseAwaitExpression (expression: AwaitExpression): string {
+    const callee = this.parseExpression(expression.argument)
+    const resultParsed = this.parseReturnString(expression.argument.type, String(callee))
+
+    return `$(wait ${resultParsed})`
   }
 }
