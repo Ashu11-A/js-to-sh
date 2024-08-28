@@ -9,12 +9,13 @@ import { ParserSwitch } from '@/transpilers/switch.js'
 import c from 'chalk'
 // @ts-ignore
 import AbstractSyntaxTree from 'abstract-syntax-tree'
-import { readFileSync } from 'fs'
+import { existsSync, readFileSync } from 'fs'
 import { readFile } from 'fs/promises'
 import { ArrowFunctionExpression, AwaitExpression, ClassDeclaration, NewExpression } from 'node_modules/meriyah/dist/src/estree.js'
 import { basename, dirname, join, resolve } from 'path'
 import terminalLink from 'terminal-link'
 import { ArrayExpression, BinaryExpression, BlockStatement, BlockStatementBase, BreakStatement, CallExpression, DeclarationStatement, Expression, ExpressionStatement, ForOfStatement, FunctionDeclaration, FunctionExpression, Identifier, IfStatement, ImportDeclaration, Literal, MemberExpression, MetaProperty, Parameter, PrivateIdentifier, ReturnStatement, SpreadElement, Statement, SwitchStatement, TemplateLiteral, VariableDeclaration } from '../../node_modules/meriyah/src/estree.js'
+import chalk from 'chalk'
 
 interface TransformOptions {
   path: string
@@ -337,9 +338,14 @@ export class Transpiler {
    */
   static parseImportDeclaration(node: ImportDeclaration): string {
     const module = (node as ImportDeclaration)
+    const packagee = this.parseExpression(module.source) as string
     const path = dirname(resolve(this.options.path))
+
+    if (!existsSync(join(path, packagee))) {
+      throw new Error(chalk.red(`[${packagee}] `, 'It is not possible to use external or internal packages.'))
+    }
     // Pega o caminho relativo dos transformadores, com base no path do arquivo
-    const filePath = join(path, (this.parseExpression(module.source) as string).replace('javascript', 'shellscript').replace('.js', '.sh'))
+    const filePath = join(path, packagee.replace('javascript', 'shellscript').replace('.js', '.sh'))
     const code = readFileSync(filePath, { encoding: 'utf-8' })
 
     return code
