@@ -6,7 +6,7 @@ import { glob } from 'glob'
 import { join } from 'path'
 
 const path = join(import.meta.dirname, 'modules')
-const files = await glob(['**/*.ts'], { cwd: path })
+const files = await glob(['**/*.js'], { cwd: path })
 
 console.log(files)
 
@@ -16,5 +16,5 @@ for (const file of files) {
   const output = Transpiler.parser(AST)
 
   if (!existsSync('output')) await mkdir('output')
-  await writeFile(`output/${file.replace('tests/', '').replace('.ts', '.sh')}`, output)
+  await writeFile(`output/${file.replace('tests/', '').replace('.js', '.sh')}`, output)
 }
