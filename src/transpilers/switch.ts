@@ -1,7 +1,7 @@
-import { SwitchStatement } from 'node_modules/meriyah/src/estree.js'
 import { Transpiler } from '@/class/transpiler.js'
 import { breakLines } from '@/libs/breakLines.js'
 import { getTabs } from '@/libs/getTabs.js'
+import { SwitchStatement } from 'node_modules/meriyah/src/estree.js'
 
 export class ParserSwitch {
   AST: SwitchStatement

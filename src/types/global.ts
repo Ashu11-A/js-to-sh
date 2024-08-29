@@ -12,4 +12,6 @@ declare global {
   var isNumber: typeof utils.isNumber
   var isReadable: typeof utils.isReadable
   var isWritable: typeof utils.isWritable
+  var isCommand: typeof utils.isCommand
+  var fetchShell: typeof utils.fetch
 }

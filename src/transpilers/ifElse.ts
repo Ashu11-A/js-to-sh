@@ -1,7 +1,7 @@
-import { IfStatement, Statement } from 'node_modules/meriyah/src/estree.js'
 import { Transpiler } from '@/class/transpiler.js'
 import { breakLines } from '@/libs/breakLines.js'
 import { getTabs } from '@/libs/getTabs.js'
+import { IfStatement, Statement } from 'node_modules/meriyah/src/estree.js'
 
 export class ParseIFs {
   AST: IfStatement
@@ -23,7 +23,7 @@ export class ParseIFs {
     const code: string[] = []
 
     code.push(`${Transpiler.tabs >= 1 ? '\n' : ''}if ${test}; then`)
-    code.push(`${breakLines(consequent.map(content => `${getTabs(Transpiler.tabs)}${content}`).filter((content) => content.length === 0 ? false : true))}`)
+    code.push(`${breakLines(consequent?.map(content => `${getTabs(Transpiler.tabs)}${content}`).filter((content) => content.length === 0 ? false : true))}`)
     if (alternate.length > 0) code.push(alternate)
     code.push(`fi${Transpiler.tabs >= 1 ? '\n' : ''}`)
 

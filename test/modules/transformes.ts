@@ -3,3 +3,9 @@ if (await isDir('src')) {
 } else {
   console.log('não é um diretório')
 }
+
+const data = await fetchShell('https://api.github.com/repos/github/gitignore', {
+  method: 'GET',
+})
+
+console.log(data.status)

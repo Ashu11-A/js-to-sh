@@ -4,8 +4,8 @@
  *
  * @export
  * @param {number} tabs
- * @returns {*}
+ * @returns {string}
  */
-export function getTabs (tabs: number) {
+export function getTabs (tabs: number): string {
   return '  '.repeat(tabs)
 }

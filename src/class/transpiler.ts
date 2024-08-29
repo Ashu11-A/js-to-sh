@@ -7,15 +7,16 @@ import { ParseFunction } from '@/transpilers/funtion.js'
 import { ParseIFs } from '@/transpilers/ifElse.js'
 import { ParserSwitch } from '@/transpilers/switch.js'
 import c from 'chalk'
+import { ParseFetch } from '@/modules/fetch.js'
 // @ts-ignore
 import AbstractSyntaxTree from 'abstract-syntax-tree'
+import chalk from 'chalk'
 import { existsSync, readFileSync } from 'fs'
 import { readFile } from 'fs/promises'
-import { ArrowFunctionExpression, AwaitExpression, ClassDeclaration, NewExpression } from 'node_modules/meriyah/dist/src/estree.js'
+import { ArrowFunctionExpression, AwaitExpression, ClassDeclaration, NewExpression, ObjectExpression, ObjectLiteralElementLike, Property } from 'node_modules/meriyah/dist/src/estree.js'
 import { basename, dirname, join, resolve } from 'path'
 import terminalLink from 'terminal-link'
 import { ArrayExpression, BinaryExpression, BlockStatement, BlockStatementBase, BreakStatement, CallExpression, DeclarationStatement, Expression, ExpressionStatement, ForOfStatement, FunctionDeclaration, FunctionExpression, Identifier, IfStatement, ImportDeclaration, Literal, MemberExpression, MetaProperty, Parameter, PrivateIdentifier, ReturnStatement, SpreadElement, Statement, SwitchStatement, TemplateLiteral, VariableDeclaration } from '../../node_modules/meriyah/src/estree.js'
-import chalk from 'chalk'
 
 interface TransformOptions {
   path: string
@@ -26,6 +27,7 @@ interface TransformOptions {
 export class Transpiler {
   static tabs: number = 0
   static options: TransformOptions
+  static globalDeclarations: Record<string, string> = {}
 
   constructor(options: TransformOptions) {
     Transpiler.options = {
@@ -62,7 +64,15 @@ export class Transpiler {
     const code: string[] = []
 
     code.push('#!/bin/bash\n')
-    code.push(...this.parseController(ast))
+
+    const source = this.parseController(ast)
+
+    for (const [, codeSource] of Object.entries(Transpiler.globalDeclarations)) {
+      code.push(codeSource)
+    }
+
+    Transpiler.globalDeclarations = {}
+    code.push(...source)
 
     return breakLines(code)
   }
@@ -75,6 +85,8 @@ export class Transpiler {
       for (const node of (ast as BlockStatementBase).body) {
         processed.push(this.parseStatement(node) as string)
       }
+    } else {
+      processed.push(this.parseStatement(ast as Statement) as string)
     }
 
     return processed
@@ -91,7 +103,7 @@ export class Transpiler {
       ExportNamedDeclaration: () => { console.debug(c.red(`[parseExpression] Not identified: ${node.type}`)); return '' },
       FunctionDeclaration: () => new ParseFunction(node as FunctionDeclaration).parse(),
       EmptyStatement: () => { console.debug(c.red(`[parseExpression] Not identified: ${node.type}`)); return '' },
-      ExpressionStatement: () => { return this.parseExpressionStatement(node as ExpressionStatement) },
+      ExpressionStatement: () => this.parseExpressionStatement(node as ExpressionStatement),
       IfStatement: () => new ParseIFs(node as IfStatement).parseIfStatement(),
       DoWhileStatement: () => { console.debug(c.red(`[parseExpression] Not identified: ${node.type}`)); return '' },
       ForInStatement: () => { console.debug(c.red(`[parseExpression] Not identified: ${node.type}`)); return '' },
@@ -164,7 +176,7 @@ export class Transpiler {
       Import: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
       JSXElement: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
       JSXFragment: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
-      ObjectExpression: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
+      ObjectExpression: () => this.parseObjectExpression(expression as ObjectExpression),
       ObjectPattern: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
       Super: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
       ThisExpression: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
@@ -182,6 +194,23 @@ export class Transpiler {
     
     const result = func()
     console.debug(c.hex('#008ac3')('Formatting:'), c.hex('#00c9a7')(expression.type, c.grey('// ', result)))
+    return result
+  }
+
+  static parseObjectLiteralElementLike (element: ObjectLiteralElementLike) {
+    const LiteralElement: Record<ObjectLiteralElementLike['type'], () => string | string[]> = {
+      MethodDefinition: () => '',
+      Property: () => {
+        const property = element as Property
+        const key = this.parseExpression(property.key) as string
+        const value = this.parseExpression(property.value) as string
+        return [key, value, property.value.type]
+      },
+      RestElement: () => '',
+      SpreadElement: () => ''
+    }
+
+    const result = LiteralElement[element.type]()
     return result
   }
 
@@ -224,6 +253,7 @@ export class Transpiler {
     case 'CallExpression': return `$(${content})`
     case 'ArrayExpression': return `(${(content as string[]).join(' ')})`
     case 'ArrowFunctionExpression': return `${content}`
+    case 'ObjectExpression': return `${content}`
     }
 
     console.debug(c.red('[parseReturnString] Not identified: ', type, content))
@@ -268,7 +298,28 @@ export class Transpiler {
       return this.parseMemberExpression(callee, args.map((arg) => this.parseReturnString(arg.type, this.parseExpression(arg) as string)).join(' '))
     } else {
       const functionName = expression.callee.name
+      const rootPath = join(import.meta.dirname, '..')
+
+      /**
+       * Aqui é definido o transformers de certas funções, como o fetch, onde é puxado a função que trata o fetch entre curl e wget, e o isCommand para validar se existe as dependencias
+       */
+      switch (functionName) {
+      case 'fetchShell': {
+        const fetchCode = readFileSync(join(rootPath, 'transformers/shellscript/fetch.sh'), { encoding: 'utf-8' })
+        const isCommandCode = readFileSync(join(rootPath, 'transformers/shellscript/isCommand.sh'), { encoding: 'utf-8' })
+        Transpiler.globalDeclarations = Object.assign({ 'isCommand': isCommandCode, 'fetch': fetchCode }, Transpiler.globalDeclarations)
+        break
+      }
+      }
+
       const args = expression.arguments.map((arg) => this.parseReturnString(arg.type, this.parseExpression(arg) as string)) as (string)[]
+
+      const transformer = join(rootPath, 'transformers/shellscript', `${functionName}.sh`)
+
+      if (existsSync(transformer)) {
+        const transformerCode = readFileSync(transformer, { encoding: 'utf-8' })
+        Transpiler.globalDeclarations = Object.assign(Transpiler.globalDeclarations, { [functionName]: transformerCode })
+      }
 
       return `${functionName} ${args.length > 0 ? args.join(' ') : ''}`
     }
@@ -394,7 +445,11 @@ export class Transpiler {
       const intNode = this.parseExpression(variable.init) as string
       if (variable.init?.type === 'ArrowFunctionExpression') this.tabs--
 
-      const variableOutput = this.parseReturnString(variable.init?.type ?? 'Literal', intNode)
+      /**
+       * Quando usar const data = await fetchShell()
+       * o tipo dele será AwaitExpression, mas isso é só um intermediário para CallExpression, por isso usamos: variable.init.argument.type
+       */
+      const variableOutput = this.parseReturnString(variable.init?.type === 'AwaitExpression' ? (variable.init as AwaitExpression).argument.type : variable.init?.type ?? 'Literal', intNode)
 
       if (intNode.length === 0) { code.push(variableName); continue }
 
@@ -592,9 +647,17 @@ export class Transpiler {
    * @returns {string}
    */
   static parseAwaitExpression (expression: AwaitExpression): string {
+    return this.parseExpression(expression.argument) as string
+    /*  Not working
     const callee = this.parseExpression(expression.argument)
     const resultParsed = this.parseReturnString(expression.argument.type, String(callee))
 
-    return `$(wait ${resultParsed})`
+
+    // return `$(wait ${resultParsed})`
+    */
+  }
+
+  static parseObjectExpression (expression: ObjectExpression) {
+    return new ParseFetch(expression).parserProperties()
   }
 }
