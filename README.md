@@ -77,14 +77,23 @@ function some (num1, num2) {
   return num1 + num2
 }
 
-function someString (str1, str2) {
+function string (str1, str2) {
   return `${str1} ${str2}`
 }
 
 const result = some(1, 2)
 
-console.log(string('teste', 'teste'))
+console.log(string('test', 'test'))
 console.log(result)
+
+const func = (str) => console.log(str)
+const func2 = (str) => {
+  console.log(str)
+  console.log(str)
+}
+
+func('ArrowFunctionExpression')
+func2('ArrowFunctionExpression')
 ```
 
 Output:
@@ -97,13 +106,27 @@ function some() {
   echo "$(( "$num1" + "$num2" ))"
 }
 
-function someString() {
+function string() {
   local str1=$1
   local str2=$2
   echo ""$str1" "$str2""
 }
 
 result=$(some 1 2)
-echo "$(string teste teste)"
+echo "$(string test test)"
 echo "$result"
+
+function func () {
+  local str=$1
+  echo "$str"
+}
+
+function func2 () {
+  local str=$1
+  echo "$str"
+  echo "$str"
+}
+
+func "ArrowFunctionExpression"
+func2 "ArrowFunctionExpression"
 ```
