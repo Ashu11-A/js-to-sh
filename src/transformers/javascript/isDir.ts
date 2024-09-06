@@ -1,6 +1,13 @@
 import { stat } from 'fs/promises'
 
-const isDir = async (path: string) => {
+/**
+ * Verifica se o path é um diretório
+ *
+ * @async
+ * @param {string} path
+ * @returns {Promise<boolean>}
+ */
+const isDir = async (path: string): Promise<boolean> => {
   try {
     return (await stat(path)).isDirectory()
   } catch {

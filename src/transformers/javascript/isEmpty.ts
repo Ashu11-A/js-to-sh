@@ -1,5 +1,12 @@
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const isEmpty =  (content: any) => {
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+/**
+ * Valida se o input de algo é vazio
+ *
+ * @param {any} content
+ * @returns {boolean}
+ */
+const isEmpty =  (content: any): boolean => {
   switch (typeof content) {
   case 'undefined': {
     return true

@@ -60,19 +60,51 @@ Usage: tjss [options]
 ##### ⚠️ | Warning: Currently only use this package in projects that support ESM natively, it won't work with commonjs (CJS)!
 
 ```ts
+// build.ts
 import 'js-to-sh/loader' // this should be in the main file of your project
 import { Transpiler } from 'js-to-sh'
 
-const AST = await new Transpiler({ path: 'src/test.ts' }).loader()
+const AST = await new Transpiler({ path: 'src/test.js' }).loader()
 const code = Transpiler.parser(AST)
 
 console.log(code)
+```
+
+## 🌎 | Global variables
+
+These global variables are associated with static functions, which are imported during the build process of the file. You should use these functions if you need to leverage shellscript behaviors.
+
+```ts
+// Checks if a specific command exists in the operating system where the script is running.
+isCommand(command)
+
+// Checks if the provided path is a directory.
+isDir(path)
+
+// Validates that the given input is empty.
+isEmpty(content)
+
+// Validates that the specified file has execute permissions.
+isExecutable(filePath)
+
+// Checks if the provided path points to a file.
+isFile(filePath)
+
+// Validates that the input is a number.
+isNumber(number)
+
+// Checks if the provided path has read permissions.
+isReadable(path)
+
+// Validates that the specified path has write permissions.
+isWritable(path)
 ```
 
 ## 💡 | Example
 
 Input:
 ```js
+// src/test.js
 function some (num1, num2) {
   return num1 + num2
 }

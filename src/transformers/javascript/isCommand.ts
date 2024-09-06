@@ -3,7 +3,7 @@ import { promisify } from 'util'
 
 
 /**
- * Usado para validar se existe um certo tipo de comando no sistema operacionar onde o script está rodando
+ * Usado para validar se existe um certo tipo de comando existe no sistema operacional onde o script está rodando
  *
  * @async
  * @param {string} command

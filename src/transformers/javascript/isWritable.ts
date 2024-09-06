@@ -1,6 +1,13 @@
 import { access, constants } from 'fs/promises'
 
-const isWritable = async (path: string) => {
+/**
+ * Valida se há permissão de escrita.
+ *
+ * @async
+ * @param {string} path
+ * @returns {Promise<boolean>}
+ */
+const isWritable = async (path: string): Promise<boolean> => {
   try {
     await access(path, constants.W_OK)
     return true

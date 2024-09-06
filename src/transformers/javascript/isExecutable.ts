@@ -1,8 +1,15 @@
 import { access, constants } from 'fs/promises'
 
-const isExecutable = async (path: string) => {
+/**
+ * Valida se o arquivo tem permissão de execução.
+ *
+ * @async
+ * @param {string} filePath
+ * @returns {Promise<boolean>}
+ */
+const isExecutable = async (filePath: string): Promise<boolean> => {
   try {
-    await access(path, constants.X_OK)
+    await access(filePath, constants.X_OK)
     return true
   } catch {
     return false
