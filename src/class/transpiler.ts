@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { breakLines } from '@/libs/breakLines.js'
-import { getTabs } from '@/libs/getTabs.js'
 import { Console } from '@/modules/console.js'
+import { ParseFetch } from '@/modules/fetch.js'
 import { ParserClass } from '@/transpilers/class.js'
 import { ParseFunction } from '@/transpilers/funtion.js'
 import { ParseIFs } from '@/transpilers/ifElse.js'
 import { ParserSwitch } from '@/transpilers/switch.js'
 import c from 'chalk'
-import { ParseFetch } from '@/modules/fetch.js'
+import { ParseLoops } from '@/transpilers/loops.js'
 // @ts-ignore
 import AbstractSyntaxTree from 'abstract-syntax-tree'
 import chalk from 'chalk'
@@ -107,7 +107,7 @@ export class Transpiler {
       IfStatement: () => new ParseIFs(node as IfStatement).parseIfStatement(),
       DoWhileStatement: () => { console.debug(c.red(`[parseExpression] Not identified: ${node.type}`)); return '' },
       ForInStatement: () => { console.debug(c.red(`[parseExpression] Not identified: ${node.type}`)); return '' },
-      ForOfStatement: () => this.parseForOfStatement(node as ForOfStatement),
+      ForOfStatement: () => new ParseLoops(node as ForOfStatement).parseForOfStatement(),
       ForStatement: () => { console.debug(c.red(`[parseExpression] Not identified: ${node.type}`)); return '' },
       WhileStatement: () => { console.debug(c.red(`[parseExpression] Not identified: ${node.type}`)); return '' },
       ImportDeclaration: () => { return this.parseImportDeclaration(node as ImportDeclaration) },
@@ -570,40 +570,6 @@ export class Transpiler {
   static parseArrayExpression(expression: ArrayExpression): string[] {
     const elements = expression.elements.map((element) => this.parseExpression(element))
     return (elements as string[])
-  }
-
-  /**
-   * Formata For of
-   * 
-   * Input:
-   * const numbers = [0, 2, 4]
-   * 
-   * for (const number of numbers) {
-   *   console.debug(number)
-   * }
-   * 
-   * Output:
-   * numbers=(0 2 4)
-   * 
-   * for number in "${numbers[@]}"; do
-   *   echo "$number"
-   * done
-   *
-   * @param {ForOfStatement} node
-   * @returns {string}
-   */
-  static parseForOfStatement(node: ForOfStatement): string {
-    const code: string[] = []
-    const left = this.parseStatement(node.left as VariableDeclaration)
-    const right = this.parseExpression(node.right)
-    const body = this.parseController(node.body)
-
-    code.push(`\n${getTabs(this.tabs)}for ${left} in "$\{${right}[@]}"; do`)
-    this.tabs = this.tabs + 1
-    code.push(...body.map((content) => `${getTabs(this.tabs)}${content}`))
-    this.tabs = this.tabs - 1
-    code.push(`${getTabs(this.tabs)}done`)
-    return breakLines(code)
   }
 
   static parseBreakStatement(node: BreakStatement) {
