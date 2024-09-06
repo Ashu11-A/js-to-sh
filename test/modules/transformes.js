@@ -4,7 +4,7 @@ if (await isDir('src')) {
   console.log('não é um diretório')
 }
 
-const data = await fetchShell('https://api.github.com/repos/github/gitignore', {
+const data = await fetch('https://api.github.com/repos/github/gitignore', {
   method: 'GET',
 })
 

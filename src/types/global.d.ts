@@ -9,4 +9,4 @@ declare function isNumber(num: any): boolean
 declare function isReadable(path: string): Promise<boolean>
 declare function isWritable(path: string): Promise<boolean>
 declare function isCommand(command: string): Promise<void>
-declare function fetchShell(input: string | URL | globalThis.Request, init?: RequestType): Promise<Response>
+declare function fetch(input: string | URL | globalThis.Request, init?: RequestType): Promise<Response>

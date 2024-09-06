@@ -304,7 +304,7 @@ export class Transpiler {
        * Aqui é definido o transformers de certas funções, como o fetch, onde é puxado a função que trata o fetch entre curl e wget, e o isCommand para validar se existe as dependencias
        */
       switch (functionName) {
-      case 'fetchShell': {
+      case 'fetch': {
         const fetchCode = readFileSync(join(rootPath, 'transformers/shellscript/fetch.sh'), { encoding: 'utf-8' })
         const isCommandCode = readFileSync(join(rootPath, 'transformers/shellscript/isCommand.sh'), { encoding: 'utf-8' })
         Transpiler.globalDeclarations = Object.assign({ 'isCommand': isCommandCode, 'fetch': fetchCode }, Transpiler.globalDeclarations)

@@ -133,7 +133,7 @@ function fetchStatus() {
     echo "$status_code"
 }
 
-function fetchShell() {
+function fetch() {
     local url="$1"
     local method="$2"
     local headers="$3"
