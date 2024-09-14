@@ -1,12 +1,17 @@
 #!/usr/bin/env node
 
-import '@/index.js'
+import './index.js'
+import { Colors, Loggings, LoggingsRegister, Rgb,  } from '@loggings/beta'
 import { mkdir, writeFile } from 'fs/promises'
-import { Args } from './class/args.js'
-import { Transpiler } from './class/transpiler.js'
 import { glob } from 'glob'
 import { dirname, join } from 'path'
-import c from 'chalk'
+import { Args } from './class/args.js'
+import { Transpiler } from './class/transpiler.js'
+
+Loggings.rem(LoggingsRegister.identify)
+Loggings.config({ format: '{message} ' })
+const logger = new Loggings('', 'black')
+Loggings.useConsole(logger)
 
 global.console = {
   ...global.console,
@@ -15,6 +20,7 @@ global.console = {
     if (JSON.parse(process.env['transpilerDebug'] ?? 'false')) process.stdout.write(`${message} ${optionalParams.join('\n')}\n`)
   },
 }
+
 
 const args = process.argv.slice(2).map((arg) => arg.replace('--', ''))
 const code = new Map<string, string>()
@@ -84,7 +90,7 @@ new Args([
 
         if (content.includes('.sh')) {
           await writeFile(pathFile, output, { encoding: 'utf-8' })
-          console.log(`${c.yellow('Transpiled:')} ${c.blueBright(path)} ➤ ${c.hex('#0ce829')(content)}`)
+          console.log(`${Colors('yellow','Transpiled:')} ${Colors('blue', path)} ➤ ${Rgb(12, 232, 41) + (content)}`)
           continue
         }
         if (code.size > 1) {

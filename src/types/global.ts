@@ -1,5 +1,5 @@
 /* eslint-disable no-var */
-import * as utils from '@/transformers/index.js'
+import * as utils from '../transformers/index.js'
 
 declare global {
   var isDir: typeof utils.isDir

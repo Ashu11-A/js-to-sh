@@ -1,7 +1,7 @@
-import { Transpiler } from '@/class/transpiler.js'
-import { breakLines } from '@/libs/breakLines.js'
-import { getTabs } from '@/libs/getTabs.js'
-import { ForOfStatement, VariableDeclaration } from 'node_modules/meriyah/src/estree.js'
+import { Transpiler } from '../class/transpiler.js'
+import { breakLines } from '../libs/breakLines.js'
+import { getTabs } from '../libs/getTabs.js'
+import { ForOfStatement, VariableDeclaration } from '../../node_modules/meriyah/src/estree.js'
 
 export class ParseLoops {
   constructor(public ATS: ForOfStatement) {}

@@ -1,6 +1,6 @@
-import { Transpiler } from '@/class/transpiler.js'
-import { breakLines } from '@/libs/breakLines.js'
-import { getTabs } from '@/libs/getTabs.js'
+import { Transpiler } from '../class/transpiler.js'
+import { breakLines } from '../libs/breakLines.js'
+import { getTabs } from '../libs/getTabs.js'
 
 export interface ConsoleOptions {
     methodName: string

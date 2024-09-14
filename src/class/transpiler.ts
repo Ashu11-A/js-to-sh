@@ -1,22 +1,20 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import { breakLines } from '@/libs/breakLines.js'
-import { Console } from '@/modules/console.js'
-import { ParseFetch } from '@/modules/fetch.js'
-import { ParserClass } from '@/transpilers/class.js'
-import { ParseFunction } from '@/transpilers/funtion.js'
-import { ParseIFs } from '@/transpilers/ifElse.js'
-import { ParserSwitch } from '@/transpilers/switch.js'
-import c from 'chalk'
-import { ParseLoops } from '@/transpilers/loops.js'
+import { breakLines } from '../libs/breakLines.js'
+import { Console } from '../modules/console.js'
+import { ParseFetch } from '../modules/fetch.js'
+import { ParserClass } from '../transpilers/class.js'
+import { ParseFunction } from '../transpilers/funtion.js'
+import { ParseIFs } from '../transpilers/ifElse.js'
+import { ParserSwitch } from '../transpilers/switch.js'
+import { ParseLoops } from '../transpilers/loops.js'
 // @ts-ignore
 import AbstractSyntaxTree from 'abstract-syntax-tree'
-import chalk from 'chalk'
 import { existsSync, readFileSync } from 'fs'
 import { readFile } from 'fs/promises'
-import { ArrowFunctionExpression, AwaitExpression, ClassDeclaration, NewExpression, ObjectExpression, ObjectLiteralElementLike, Property } from 'node_modules/meriyah/dist/src/estree.js'
+import { ArrowFunctionExpression, AwaitExpression, ClassDeclaration, NewExpression, ObjectExpression, ObjectLiteralElementLike, Property } from '../../node_modules/meriyah/dist/src/estree.js'
 import { basename, dirname, join, resolve } from 'path'
-import terminalLink from 'terminal-link'
 import { ArrayExpression, BinaryExpression, BlockStatement, BlockStatementBase, BreakStatement, CallExpression, DeclarationStatement, Expression, ExpressionStatement, ForOfStatement, FunctionDeclaration, FunctionExpression, Identifier, IfStatement, ImportDeclaration, Literal, MemberExpression, MetaProperty, Parameter, PrivateIdentifier, ReturnStatement, SpreadElement, Statement, SwitchStatement, TemplateLiteral, VariableDeclaration } from '../../node_modules/meriyah/src/estree.js'
+import { Colors, Rgb } from '@loggings/beta'
 
 interface TransformOptions {
   path: string
@@ -43,8 +41,8 @@ export class Transpiler {
       },
     }
 
-    console.debug(c.hex('#f9f871')('Debug Mode!'))
-    console.debug(c.hex('#845ec2')('Compiling:'), c.hex('#ffc75f')(terminalLink(basename(Transpiler.options.path), Transpiler.options.path)))
+    console.debug(Rgb(249, 248, 113) +'Debug Mode!')
+    console.debug(Rgb(132, 94, 194) + 'Compiling:', Rgb(255, 199, 95) + basename(Transpiler.options.path), Transpiler.options.path)
   }
 
   /**
@@ -96,30 +94,30 @@ export class Transpiler {
     const Declarations: Record<string, () => string | string[] | number> = {
       BlockStatement: () => { return this.parseBlockStatement(node as BlockStatement) },
       BreakStatement: () => this.parseBreakStatement(node as BreakStatement),
-      ContinueStatement: () => { console.debug(c.red(`[parseExpression] Not identified: ${node.type}`)); return '' },
-      DebuggerStatement: () => { console.debug(c.red(`[parseExpression] Not identified: ${node.type}`)); return '' },
-      ExportDefaultDeclaration: () => { console.debug(c.red(`[parseExpression] Not identified: ${node.type}`)); return '' },
-      ExportAllDeclaration: () => { console.debug(c.red(`[parseExpression] Not identified: ${node.type}`)); return '' },
-      ExportNamedDeclaration: () => { console.debug(c.red(`[parseExpression] Not identified: ${node.type}`)); return '' },
+      ContinueStatement: () => { console.debug(Colors('red', `[parseExpression] Not identified: ${node.type}`)); return '' },
+      DebuggerStatement: () => { console.debug(Colors('red', `[parseExpression] Not identified: ${node.type}`)); return '' },
+      ExportDefaultDeclaration: () => { console.debug(Colors('red', `[parseExpression] Not identified: ${node.type}`)); return '' },
+      ExportAllDeclaration: () => { console.debug(Colors('red', `[parseExpression] Not identified: ${node.type}`)); return '' },
+      ExportNamedDeclaration: () => { console.debug(Colors('red', `[parseExpression] Not identified: ${node.type}`)); return '' },
       FunctionDeclaration: () => new ParseFunction(node as FunctionDeclaration).parse(),
-      EmptyStatement: () => { console.debug(c.red(`[parseExpression] Not identified: ${node.type}`)); return '' },
+      EmptyStatement: () => { console.debug(Colors('red', `[parseExpression] Not identified: ${node.type}`)); return '' },
       ExpressionStatement: () => this.parseExpressionStatement(node as ExpressionStatement),
       IfStatement: () => new ParseIFs(node as IfStatement).parseIfStatement(),
-      DoWhileStatement: () => { console.debug(c.red(`[parseExpression] Not identified: ${node.type}`)); return '' },
-      ForInStatement: () => { console.debug(c.red(`[parseExpression] Not identified: ${node.type}`)); return '' },
+      DoWhileStatement: () => { console.debug(Colors('red', `[parseExpression] Not identified: ${node.type}`)); return '' },
+      ForInStatement: () => { console.debug(Colors('red', `[parseExpression] Not identified: ${node.type}`)); return '' },
       ForOfStatement: () => new ParseLoops(node as ForOfStatement).parseForOfStatement(),
-      ForStatement: () => { console.debug(c.red(`[parseExpression] Not identified: ${node.type}`)); return '' },
-      WhileStatement: () => { console.debug(c.red(`[parseExpression] Not identified: ${node.type}`)); return '' },
+      ForStatement: () => { console.debug(Colors('red', `[parseExpression] Not identified: ${node.type}`)); return '' },
+      WhileStatement: () => { console.debug(Colors('red', `[parseExpression] Not identified: ${node.type}`)); return '' },
       ImportDeclaration: () => { return this.parseImportDeclaration(node as ImportDeclaration) },
-      LabeledStatement: () => { console.debug(c.red(`[parseExpression] Not identified: ${node.type}`)); return '' },
+      LabeledStatement: () => { console.debug(Colors('red', `[parseExpression] Not identified: ${node.type}`)); return '' },
       ReturnStatement: () => { return this.parseReturnStatement(node as ReturnStatement) },
       SwitchStatement: () => new ParserSwitch(node as SwitchStatement).parse(),
-      ThrowStatement: () => { console.debug(c.red(`[parseExpression] Not identified: ${node.type}`)); return '' },
-      TryStatement: () => { console.debug(c.red(`[parseExpression] Not identified: ${node.type}`)); return '' },
+      ThrowStatement: () => { console.debug(Colors('red', `[parseExpression] Not identified: ${node.type}`)); return '' },
+      TryStatement: () => { console.debug(Colors('red', `[parseExpression] Not identified: ${node.type}`)); return '' },
       VariableDeclaration: () => this.parseVariableDeclaration(node as VariableDeclaration),
-      WithStatement: () => { console.debug(c.red(`[parseExpression] Not identified: ${node.type}`)); return '' },
+      WithStatement: () => { console.debug(Colors('red', `[parseExpression] Not identified: ${node.type}`)); return '' },
     }
-    console.debug(c.hex('#008ac3')('Building:'), c.hex('#00c9a7')(node.type))
+    console.debug(Rgb(0, 138, 195) + 'Building:', Rgb(0, 201, 167) + node.type)
     const func = Declarations[node.type]
 
     if (func === undefined) {
@@ -146,45 +144,45 @@ export class Transpiler {
       ArrowFunctionExpression: () => ParseFunction.parseArrowFunctionExpression(expression as ArrowFunctionExpression),
       AssignmentExpression: () => { throw new Error('Chamada errada') },
       BinaryExpression: () => { return this.parseBinaryExpression(expression as BinaryExpression) },
-      ConditionalExpression: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
-      MetaProperty: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
-      ChainExpression: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
-      JSXClosingElement: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
-      JSXClosingFragment: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
-      JSXExpressionContainer: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
+      ConditionalExpression: () => { console.debug(Colors('red', `[parseExpression] Not identified: ${expression.type}`)); return '' },
+      MetaProperty: () => { console.debug(Colors('red', `[parseExpression] Not identified: ${expression.type}`)); return '' },
+      ChainExpression: () => { console.debug(Colors('red', `[parseExpression] Not identified: ${expression.type}`)); return '' },
+      JSXClosingElement: () => { console.debug(Colors('red', `[parseExpression] Not identified: ${expression.type}`)); return '' },
+      JSXClosingFragment: () => { console.debug(Colors('red', `[parseExpression] Not identified: ${expression.type}`)); return '' },
+      JSXExpressionContainer: () => { console.debug(Colors('red', `[parseExpression] Not identified: ${expression.type}`)); return '' },
       PrivateIdentifier: () => { return this.parsePrivateIdentifier(expression as PrivateIdentifier) },
-      JSXOpeningElement: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
-      JSXOpeningFragment: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
-      JSXSpreadChild: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
-      LogicalExpression: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
+      JSXOpeningElement: () => { console.debug(Colors('red', `[parseExpression] Not identified: ${expression.type}`)); return '' },
+      JSXOpeningFragment: () => { console.debug(Colors('red', `[parseExpression] Not identified: ${expression.type}`)); return '' },
+      JSXSpreadChild: () => { console.debug(Colors('red', `[parseExpression] Not identified: ${expression.type}`)); return '' },
+      LogicalExpression: () => { console.debug(Colors('red', `[parseExpression] Not identified: ${expression.type}`)); return '' },
       NewExpression: () => ParserClass.parseNewExpression(expression as NewExpression),
-      RestElement: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
-      SequenceExpression: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
-      SpreadElement: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
+      RestElement: () => { console.debug(Colors('red', `[parseExpression] Not identified: ${expression.type}`)); return '' },
+      SequenceExpression: () => { console.debug(Colors('red', `[parseExpression] Not identified: ${expression.type}`)); return '' },
+      SpreadElement: () => { console.debug(Colors('red', `[parseExpression] Not identified: ${expression.type}`)); return '' },
       AwaitExpression: () => this.parseAwaitExpression(expression as AwaitExpression),
       CallExpression: () => this.parseCallExpression(expression as CallExpression),
-      ImportExpression: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
-      ClassExpression: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
+      ImportExpression: () => { console.debug(Colors('red', `[parseExpression] Not identified: ${expression.type}`)); return '' },
+      ClassExpression: () => { console.debug(Colors('red', `[parseExpression] Not identified: ${expression.type}`)); return '' },
       ClassDeclaration: () => new ParserClass(expression as ClassDeclaration).parseClassDeclaration(),
       FunctionExpression: () => this.parseFunctionExpression(expression as FunctionExpression),
       Literal: () => { return this.parseLiteral(expression as Literal) },
       TemplateLiteral: () => this.parseTemplateLiteral(expression as TemplateLiteral),
       MemberExpression: () => this.parseMemberExpression(expression as MemberExpression),
       ArrayExpression: () => this.parseArrayExpression(expression as ArrayExpression),
-      ArrayPattern: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
+      ArrayPattern: () => { console.debug(Colors('red', `[parseExpression] Not identified: ${expression.type}`)); return '' },
       Identifier: () => { return this.parseIdentifier(expression as Identifier) },
-      Import: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
-      JSXElement: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
-      JSXFragment: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
+      Import: () => { console.debug(Colors('red', `[parseExpression] Not identified: ${expression.type}`)); return '' },
+      JSXElement: () => { console.debug(Colors('red', `[parseExpression] Not identified: ${expression.type}`)); return '' },
+      JSXFragment: () => { console.debug(Colors('red', `[parseExpression] Not identified: ${expression.type}`)); return '' },
       ObjectExpression: () => this.parseObjectExpression(expression as ObjectExpression),
-      ObjectPattern: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
-      Super: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
-      ThisExpression: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
-      TaggedTemplateExpression: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
-      UnaryExpression: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
-      UpdateExpression: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
-      YieldExpression: () => { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
-      AssignmentPattern: function (): string | string[] { console.debug(c.red(`[parseExpression] Not identified: ${expression.type}`)); return '' },
+      ObjectPattern: () => { console.debug(Colors('red', `[parseExpression] Not identified: ${expression.type}`)); return '' },
+      Super: () => { console.debug(Colors('red', `[parseExpression] Not identified: ${expression.type}`)); return '' },
+      ThisExpression: () => { console.debug(Colors('red', `[parseExpression] Not identified: ${expression.type}`)); return '' },
+      TaggedTemplateExpression: () => { console.debug(Colors('red', `[parseExpression] Not identified: ${expression.type}`)); return '' },
+      UnaryExpression: () => { console.debug(Colors('red', `[parseExpression] Not identified: ${expression.type}`)); return '' },
+      UpdateExpression: () => { console.debug(Colors('red', `[parseExpression] Not identified: ${expression.type}`)); return '' },
+      YieldExpression: () => { console.debug(Colors('red', `[parseExpression] Not identified: ${expression.type}`)); return '' },
+      AssignmentPattern: function (): string | string[] { console.debug(Colors('red', `[parseExpression] Not identified: ${expression.type}`)); return '' },
     }
     const func = Expressions[expression.type]
 
@@ -193,7 +191,7 @@ export class Transpiler {
     }
     
     const result = func()
-    console.debug(c.hex('#008ac3')('Formatting:'), c.hex('#00c9a7')(expression.type, c.grey('// ', result)))
+    console.debug(Rgb(0, 138, 195) + 'Formatting:', Rgb(0, 201, 167) + expression.type, Colors('gray',`// ${result}`))
     return result
   }
 
@@ -256,7 +254,7 @@ export class Transpiler {
     case 'ObjectExpression': return `${content}`
     }
 
-    console.debug(c.red('[parseReturnString] Not identified: ', type, content))
+    console.debug(Colors('red', `[parseReturnString] Not identified: ${type} ${content}`))
     return `"${content}"`
   }
 
@@ -393,7 +391,7 @@ export class Transpiler {
     const path = dirname(resolve(this.options.path))
 
     if (!existsSync(join(path, packagee))) {
-      throw new Error(chalk.red(`[${packagee}] `, 'It is not possible to use external or internal packages.'))
+      throw new Error(Colors('red', `[${packagee}] It is not possible to use external or internal packages.`))
     }
     // Pega o caminho relativo dos transformadores, com base no path do arquivo
     const filePath = join(path, packagee.replace('javascript', 'shellscript').replace('.js', '.sh'))
@@ -534,7 +532,7 @@ export class Transpiler {
       break
     }
     default: {
-      console.debug(c.red(`[parseMemberExpression] Not identified: ${object}.${property}`))
+      console.debug(Colors('red', `[parseMemberExpression] Not identified: ${object}.${property}`))
       code.push(`${object}.${property}`)
     }
     }
@@ -556,7 +554,7 @@ export class Transpiler {
 
     switch (`${metaName}.${propertyName}.${endPropertyName}`) {
     case 'import.meta.dirname': return '$(dirname "$(realpath "$0")")'
-    default: console.debug(c.red(`[parseMetaProperty] Not identified: ${metaName}.${propertyName}.${endPropertyName}`))
+    default: console.debug(Colors('red', `[parseMetaProperty] Not identified: ${metaName}.${propertyName}.${endPropertyName}`))
     }
     return ''
   }

@@ -1,5 +1,5 @@
-import { Arg } from '@/types/args.js'
-import c from 'chalk'
+import { Arg } from '../types/args.js'
+import { Colors } from '@loggings/beta'
 
 export class Args {
   static args: Arg[] = []
@@ -45,7 +45,7 @@ export class Args {
 
   static help () {
     const output: string[] = []
-    output.push(`Usage: ${c.yellowBright('tjss')} ${c.magentaBright('[options]')}\n`)
+    output.push(`Usage: ${Colors('yellow', 'tjss')} ${Colors('magenta', '[options]')}\n`)
     output.push('  Options:\n')
 
     const maxAliasLength = Math.max(...Args.args.map(arg => arg.alias.join(', ').length))
@@ -57,7 +57,7 @@ export class Args {
       const aliasPadding = ' '.repeat(maxAliasLength - alias.length)
       const commandPadding = ' '.repeat(maxCommandLength - command.length)
 
-      output.push(`   ${c.blueBright(alias)}${aliasPadding} ${c.white(command)}${commandPadding} ${c.green(arg.description)}`)
+      output.push(`   ${Colors('blue', alias)}${aliasPadding} ${Colors('white', command)}${commandPadding} ${Colors('green', arg.description)}`)
     }
     return output.join('\n')
   }

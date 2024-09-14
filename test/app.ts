@@ -1,5 +1,5 @@
-import { Transpiler } from '@/class/transpiler.js'
-import '@/index.js'
+import { Transpiler } from '../class/transpiler.js'
+import '../index.js'
 import { existsSync } from 'fs'
 import { mkdir, writeFile } from 'fs/promises'
 import { glob } from 'glob'

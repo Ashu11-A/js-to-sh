@@ -1,7 +1,7 @@
 {
   "name": "js-to-sh",
   "description": "Turn javascript code into shellscript",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "main": "dist/mjs/index.cjs",
   "module": "dist/mjs/index.js",
   "typings": "dist/types/index.d.ts",
@@ -35,19 +35,15 @@
       "types": "./dist/types/loader/index.d.ts"
     }
   },
-  "imports": {
-    "@/*": [
-      "src/*"
-    ]
-  },
   "engines": {
     "node": ">=20"
   },
   "scripts": {
     "cli": "tsx src/cli.ts",
     "test": "tsx test/app.ts && chmod 777 output/*",
-    "build": "rimraf dist &&npm run build:mjs && npm run build:dts && cp -R src/transformers/shellscript dist/mjs/transformers/shellscript && ./fixup.sh && npm run lint -- --fix",
+    "build": "rimraf dist && npm run build:mjs && npm run build:dts && npm run build:cjs && cp -R src/transformers/shellscript dist/mjs/transformers/shellscript && ./fixup.sh && npm run lint -- --fix",
     "build:mjs": "tsc -p tsconfig.mjs.json && tsc-alias -p tsconfig.mjs.json",
+    "build:cjs": "npx tsx build.ts",
     "build:dts": "tsc -p tsconfig.dts.json && tsc-alias -p tsconfig.dts.json",
     "lint": "eslint -c eslint.config.js"
   },
@@ -73,10 +69,9 @@
   },
   "homepage": "https://github.com/Ashu11-A/Transpiler-JS-Shell",
   "dependencies": {
+    "@loggings/beta": "^2.0.0",
     "abstract-syntax-tree": "^2.22.0",
-    "chalk": "^5.3.0",
-    "glob": "^11.0.0",
-    "terminal-link": "^3.0.0"
+    "glob": "^11.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.0",

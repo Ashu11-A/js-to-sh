@@ -1,5 +1,5 @@
-import { Transpiler } from '@/class/transpiler.js'
-import { Expression, ObjectExpression } from 'node_modules/meriyah/src/estree.js'
+import { Transpiler } from '../class/transpiler.js'
+import { Expression, ObjectExpression } from '../../node_modules/meriyah/src/estree.js'
 
 type Properties = 'url' | 'method' | 'headers' | 'body' | 'redirect' | 'referrer' | 'credentials'
 

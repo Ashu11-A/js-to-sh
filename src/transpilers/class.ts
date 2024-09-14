@@ -1,8 +1,8 @@
-import { Transpiler } from '@/class/transpiler.js'
-import { breakLines } from '@/libs/breakLines.js'
-import { getTabs } from '@/libs/getTabs.js'
-import c from 'chalk'
-import { AssignmentExpression, ClassBody, ClassDeclaration, FunctionExpression, MethodDefinition, NewExpression } from 'node_modules/meriyah/src/estree.js'
+import { Transpiler } from '../class/transpiler.js'
+import { breakLines } from '../libs/breakLines.js'
+import { getTabs } from '../libs/getTabs.js'
+import { Colors } from '@loggings/beta'
+import { AssignmentExpression, ClassBody, ClassDeclaration, FunctionExpression, MethodDefinition, NewExpression } from '../../node_modules/meriyah/src/estree.js'
 
 export class ParserClass {
   static all = new Map<string, ParserClass>() // será usado em parseVariableDeclaration
@@ -95,7 +95,7 @@ export class ParserClass {
       //   break
       // }
       default: {
-        console.debug(c.red(`[parseClassBody] ${element.type}`))
+        console.debug(Colors('red', `[parseClassBody] ${element.type}`))
       }
       }
     }
