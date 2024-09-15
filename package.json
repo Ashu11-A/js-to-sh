@@ -1,7 +1,7 @@
 {
   "name": "js-to-sh",
   "description": "Turn javascript code into shellscript",
-  "version": "1.1.6",
+  "version": "1.1.7",
   "main": "dist/cjs/index.cjs",
   "module": "dist/mjs/index.js",
   "typings": "dist/types/index.d.ts",
@@ -44,7 +44,7 @@
   "scripts": {
     "cli": "tsx src/cli.ts",
     "test": "tsx test/app.ts && chmod 777 output/*",
-    "build": "rimraf dist && npm run build:mjs && npm run build:dts && npm run build:cjs && cp -R src/transformers/shellscript dist/mjs/transformers/shellscript && ./fixup.sh && npm run lint -- --fix",
+    "build": "rimraf dist && npm run build:mjs && npm run build:dts && npm run build:cjs && cp -R src/transformers/shellscript dist/mjs/transformers/shellscript && cp -R src/transformers/shellscript dist/cjs/transformers/shellscript && ./fixup.sh && npm run lint -- --fix",
     "build:mjs": "tsc -p tsconfig.mjs.json && tsc-alias -p tsconfig.mjs.json",
     "build:cjs": "npx tsx build.ts",
     "build:dts": "tsc -p tsconfig.dts.json && tsc-alias -p tsconfig.dts.json",

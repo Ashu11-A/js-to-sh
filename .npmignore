@@ -8,3 +8,16 @@
 /build.ts
 /.github
 /.vscode
+
+.gitignore
+.gitattributes
+
+fixup.sh
+pnpm-lock.yaml
+
+eslint.config.js
+
+tsconfig.json
+tsconfig.cjs.json
+tsconfig.dts.json
+tsconfig.mjs.json
