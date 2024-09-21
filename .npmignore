@@ -21,3 +21,5 @@ tsconfig.json
 tsconfig.cjs.json
 tsconfig.dts.json
 tsconfig.mjs.json
+
+bun.lockb

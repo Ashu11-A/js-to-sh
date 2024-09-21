@@ -57,11 +57,8 @@ Usage: tjss [options]
 ```
 
 ### 👨‍💻 | Code:
-##### ⚠️ | Warning: Currently only use this package in projects that support ESM natively, it won't work with commonjs (CJS)!
-
 ```ts
-// build.ts
-import 'js-to-sh/loader' // this should be in the main file of your project
+// build.ts - Esm
 import { Transpiler } from 'js-to-sh'
 
 const AST = await new Transpiler({ path: 'src/test.js' }).loader()
@@ -70,9 +67,31 @@ const code = Transpiler.parser(AST)
 console.log(code)
 ```
 
+```ts
+// build.js - Communjs
+const { Transpiler } = require('js-to-sh'); // <-- yes, you need that here ”;”
+
+(async () => {
+    const ast = await (new Transpiler({ path: 'src/test.js', cwd: process.cwd() })).loader()
+    const code = Transpiler.parser(ast)
+
+    console.log(code)
+})()
+```
+
 ## 🌎 | Global variables
 
 These global variables are associated with static functions, which are imported during the build process of the file. You should use these functions if you need to leverage shellscript behaviors.
+
+```ts
+// To use these functions in JavaScript, without the conversion, for backward compatibility (work in JavaScript and ShellScript), you should use:
+
+// Communjs
+require('js-to-sh/loader')
+
+// Esm
+import 'js-to-sh/globals'
+```
 
 ```ts
 // Checks if a specific command exists in the operating system where the script is running.

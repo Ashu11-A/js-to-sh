@@ -5,16 +5,17 @@ import { ParseFetch } from '../modules/fetch.js'
 import { ParserClass } from '../transpilers/class.js'
 import { ParseFunction } from '../transpilers/funtion.js'
 import { ParseIFs } from '../transpilers/ifElse.js'
-import { ParserSwitch } from '../transpilers/switch.js'
 import { ParseLoops } from '../transpilers/loops.js'
+import { ParserSwitch } from '../transpilers/switch.js'
+import { Colors, Rgb } from '@loggings/beta'
 // @ts-ignore
 import AbstractSyntaxTree from 'abstract-syntax-tree'
 import { existsSync, readFileSync } from 'fs'
 import { readFile } from 'fs/promises'
-import { ArrowFunctionExpression, AwaitExpression, ClassDeclaration, NewExpression, ObjectExpression, ObjectLiteralElementLike, Property } from '../../node_modules/meriyah/dist/src/estree.js'
 import { basename, dirname, join, resolve } from 'path'
+import { ArrowFunctionExpression, AwaitExpression, ClassDeclaration, NewExpression, ObjectExpression, ObjectLiteralElementLike, Property } from '../../node_modules/meriyah/dist/src/estree.js'
 import { ArrayExpression, BinaryExpression, BlockStatement, BlockStatementBase, BreakStatement, CallExpression, DeclarationStatement, Expression, ExpressionStatement, ForOfStatement, FunctionDeclaration, FunctionExpression, Identifier, IfStatement, ImportDeclaration, Literal, MemberExpression, MetaProperty, Parameter, PrivateIdentifier, ReturnStatement, SpreadElement, Statement, SwitchStatement, TemplateLiteral, VariableDeclaration } from '../../node_modules/meriyah/src/estree.js'
-import { Colors, Rgb } from '@loggings/beta'
+import { getTransformers } from '../loader.js'
 
 interface TransformOptions {
   path: string
@@ -33,15 +34,10 @@ export class Transpiler {
       path: join(options.cwd ?? '', options.path)
     }
 
-    global.console = {
-      ...global.console,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      debug(message?: any, ...optionalParams: any[]) {
-        if (Transpiler.options.debug) process.stdout.write(`${message} ${optionalParams.join('\n')}\n`)
-      },
-    }
+    // @ts-ignore
+    global.loggings.config({ format: '{message}', level: Transpiler.options?.debug ? 'debug' : 'info' })
 
-    console.debug(Rgb(249, 248, 113) +'Debug Mode!')
+    console.debug(Rgb(249, 248, 113) + 'Debug Mode!')
     console.debug(Rgb(132, 94, 194) + 'Compiling:', Rgb(255, 199, 95) + basename(Transpiler.options.path), Transpiler.options.path)
   }
 
@@ -296,15 +292,16 @@ export class Transpiler {
       return this.parseMemberExpression(callee, args.map((arg) => this.parseReturnString(arg.type, this.parseExpression(arg) as string)).join(' '))
     } else {
       const functionName = expression.callee.name
-      const rootPath = join(import.meta.dirname, '..')
+      const transformers: Record<string, string> = {}
+      getTransformers().map((transformer) => Object.assign(transformers, { [basename(transformer)]: transformer }))
 
       /**
        * Aqui é definido o transformers de certas funções, como o fetch, onde é puxado a função que trata o fetch entre curl e wget, e o isCommand para validar se existe as dependencias
        */
       switch (functionName) {
       case 'fetch': {
-        const fetchCode = readFileSync(join(rootPath, 'transformers/shellscript/fetch.sh'), { encoding: 'utf-8' })
-        const isCommandCode = readFileSync(join(rootPath, 'transformers/shellscript/isCommand.sh'), { encoding: 'utf-8' })
+        const fetchCode = readFileSync(transformers['fetch.sh'], { encoding: 'utf-8' })
+        const isCommandCode = readFileSync(transformers['isCommand.sh'], { encoding: 'utf-8' })
         Transpiler.globalDeclarations = Object.assign({ 'isCommand': isCommandCode, 'fetch': fetchCode }, Transpiler.globalDeclarations)
         break
       }
@@ -312,7 +309,7 @@ export class Transpiler {
 
       const args = expression.arguments.map((arg) => this.parseReturnString(arg.type, this.parseExpression(arg) as string)) as (string)[]
 
-      const transformer = join(rootPath, 'transformers/shellscript', `${functionName}.sh`)
+      const transformer = transformers[`${functionName}.sh`]
 
       if (existsSync(transformer)) {
         const transformerCode = readFileSync(transformer, { encoding: 'utf-8' })

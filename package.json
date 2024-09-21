@@ -1,9 +1,10 @@
 {
   "name": "js-to-sh",
   "description": "Turn javascript code into shellscript",
-  "version": "1.1.7",
-  "main": "dist/cjs/index.cjs",
+  "version": "1.1.8",
+  "main": "dist/cjs/index.js",
   "module": "dist/mjs/index.js",
+  "types": "dist/types/index.d.ts",
   "typings": "dist/types/index.d.ts",
   "type": "module",
   "bin": {
@@ -23,19 +24,19 @@
   },
   "exports": {
     ".": {
+      "types": "./dist/types/index.d.ts",
       "import": "./dist/mjs/index.js",
-      "require": "./dist/cjs/index.js",
-      "types": "./dist/types/index.d.ts"
+      "require": "./dist/cjs/index.js"
     },
     "./globals": {
-      "import": "./dist/types/types/globals.d.ts",
-      "require": "./dist/cjs/types/global.js",
-      "types": "./dist/types/types/globals.d.ts"
+      "types": "./dist/types/types/index.d.ts",
+      "import": "./dist/types/types/index.d.ts",
+      "require": "./dist/types/types/index.d.js"
     },
     "./loader": {
-      "import": "./dist/mjs/loader/index.js",
-      "require": "./dist/cjs/loader/index.js",
-      "types": "./dist/types/loader/index.d.ts"
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/mjs/index.js",
+      "require": "./dist/cjs/index.js"
     }
   },
   "engines": {
@@ -44,10 +45,9 @@
   "scripts": {
     "cli": "tsx src/cli.ts",
     "test": "tsx test/app.ts && chmod 777 output/*",
-    "build": "rimraf dist && npm run build:mjs && npm run build:dts && npm run build:cjs && cp -R src/transformers/shellscript dist/mjs/transformers/shellscript && cp -R src/transformers/shellscript dist/cjs/transformers/shellscript && ./fixup.sh && npm run lint -- --fix",
-    "build:mjs": "tsc -p tsconfig.mjs.json && tsc-alias -p tsconfig.mjs.json",
-    "build:cjs": "npx tsx build.ts",
-    "build:dts": "tsc -p tsconfig.dts.json && tsc-alias -p tsconfig.dts.json",
+    "build": "rimraf dist && npm run build:tsup && npm run build:dts && ./fixup.sh && cp -R src/transformers/shellscript dist/transformers",
+    "build:tsup": "npx tsx build.ts",
+    "build:dts": "mkdir dist/types && ./node_modules/.bin/dts-bundle-generator -o dist/types/index.d.ts --verbose --no-check --sort --external-imports=meriyah --external-types=meriyah --external-inlines=meriyah -- src/index.ts",
     "lint": "eslint -c eslint.config.js"
   },
   "keywords": [
@@ -79,6 +79,7 @@
   "devDependencies": {
     "@eslint/js": "^9.9.0",
     "@types/node": "^22.2.0",
+    "dts-bundle-generator": "^9.5.1",
     "eslint": "^9.9.0",
     "globals": "^15.9.0",
     "meriyah": "^5.0.0",
