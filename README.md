@@ -90,7 +90,7 @@ These global variables are associated with static functions, which are imported 
 require('js-to-sh/loader')
 
 // Esm
-import 'js-to-sh/globals'
+import 'js-to-sh/loader'
 ```
 
 ```ts
