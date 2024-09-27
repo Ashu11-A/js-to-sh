@@ -47,7 +47,7 @@
     "test": "tsx test/app.ts && chmod 777 output/*",
     "build": "rimraf dist && npm run build:tsup && npm run build:dts && ./fixup.sh && cp -R src/transformers/shellscript dist/transformers",
     "build:tsup": "bun build/build.ts",
-    "build:dts": "mkdir dist/types && ./node_modules/.bin/dts-bundle-generator -o dist/types/index.d.ts --verbose --no-check --sort --external-imports=meriyah --external-types=meriyah --external-inlines=meriyah -- src/index.ts",
+    "build:dts": "mkdir dist/types && ./node_modules/.bin/dts-bundle-generator -o dist/types/index.d.ts --verbose --no-check --sort --external-imports=meriyah --external-types=meriyah --external-inlines=meriyah -- src/index.ts && bun build/types.ts",
     "lint": "eslint -c eslint.config.js"
   },
   "keywords": [
