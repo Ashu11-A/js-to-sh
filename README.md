@@ -11,16 +11,12 @@
 
 </div>
 
-<div align="left">
-
 > [!WARNING]
 > This project is still under development and may not work as expected.
 
 ## 🤨 | What's that?
 
 This project uses ATS (abstract syntax tree) to format the javascript for shellscript syntax, but errors can happen, don't expect it to always work, for example, classes are converted to functions for their operation, but more complex things have not yet been implemented and may not work, if you want to help open a pull request!
-
-</div>
 
 ## 🤷‍♂️ | Why did you do that?
 
