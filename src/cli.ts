@@ -1,24 +1,24 @@
 #!/usr/bin/env node
 
+import './index.js'
 import { Colors, Loggings, LoggingsRegister, Rgb, } from '@loggings/beta'
 import { Transpiler } from './class/transpiler.js'
 
 Loggings.rem(LoggingsRegister.identify)
-Loggings.config({ level: Transpiler.options?.debug ? 'debug' : 'info' })
 Loggings.useConsole(new Loggings())
 
 import { mkdir, writeFile } from 'fs/promises'
 import { glob } from 'glob'
 import { basename, dirname, join } from 'path'
-import { Args } from './class/args.js'
 import { fileURLToPath } from 'url'
-import packageJ from '../package.json'
+import * as packageJ from '../package.json' with { type: 'json' }
+import { Args } from './class/args.js'
 
 const args = process.argv.slice(2).map((arg) => arg.replace('--', ''))
 const code = new Map<string, string>();
 
 (() => {
-  if (process.argv[1] !== fileURLToPath(import.meta.url) && !Object.keys(packageJ.bin).includes(basename(process.argv[1]))) return
+  if (process.argv[1] !== fileURLToPath(import.meta.url) && !Object.keys(packageJ.default.bin).includes(basename(process.argv[1]))) return
   new Args([
     {
       alias: ['-h'],
@@ -51,7 +51,7 @@ const code = new Map<string, string>();
         const files = await glob(`${content}/**/*.{js,ts}`, { cwd: process.cwd() })
 
         for (const file of files) {
-          const output = Transpiler.parser((await new Transpiler({ path: file, debug: false }).loader()))
+          const output = new Transpiler({ path: file, debug: false }).parser()
           code.set(file.split('/').slice(1).join('/'), output)
         }
       },
@@ -64,7 +64,7 @@ const code = new Map<string, string>();
       hasString: true,
       async function(content) {
         if (content === undefined) throw new Error('File not expecificate')
-        const output = Transpiler.parser((await new Transpiler({ path: content, debug: false }).loader()))
+        const output = new Transpiler({ path: content, debug: JSON.parse(process.env['transpilerDebug'] ?? 'false') }).parser()
         code.set(content, output)
       },
     },

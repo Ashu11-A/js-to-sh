@@ -13,6 +13,9 @@
 
 <div align="left">
 
+> [!WARNING]
+> This project is still under development and may not work as expected.
+
 ## 🤨 | What's that?
 
 This project uses ATS (abstract syntax tree) to format the javascript for shellscript syntax, but errors can happen, don't expect it to always work, for example, classes are converted to functions for their operation, but more complex things have not yet been implemented and may not work, if you want to help open a pull request!
@@ -39,12 +42,11 @@ npm i js-to-sh
 ### 📟 | Terminal:
 
 ```sh
-js-to-sh -f src/test.ts -o test.sh
-# OR
-npx tjss -f src/test.ts -o test.sh
+npx js-to-sh -D -f src/test.ts -o test.sh
 ```
 
 #### 📄 | Help
+
 ```
 Usage: tjss [options]
 
@@ -57,26 +59,16 @@ Usage: tjss [options]
 ```
 
 ### 👨‍💻 | Code:
+
 ```ts
-// build.ts - Esm
+// Esm
 import { Transpiler } from 'js-to-sh'
+// Communjs - Not Recommended
+//const { Transpiler } = require('js-to-sh')
 
-const AST = await new Transpiler({ path: 'src/test.js' }).loader()
-const code = Transpiler.parser(AST)
-
-console.log(code)
-```
-
-```ts
-// build.js - Communjs
-const { Transpiler } = require('js-to-sh'); // <-- yes, you need that here ”;”
-
-(async () => {
-    const ast = await (new Transpiler({ path: 'src/test.js', cwd: process.cwd() })).loader()
-    const code = Transpiler.parser(ast)
-
-    console.log(code)
-})()
+// This is not recursive yet
+const output = new Transpiler({ path: 'src/test.js', debug: true }).parser()
+console.log(output)
 ```
 
 ## 🌎 | Global variables
@@ -87,10 +79,10 @@ These global variables are associated with static functions, which are imported 
 // To use these functions in JavaScript, without the conversion, for backward compatibility (work in JavaScript and ShellScript), you should use:
 
 // Communjs
-require('js-to-sh/loader')
+require('js-to-sh')
 
 // Esm
-import 'js-to-sh/loader'
+import 'js-to-sh'
 ```
 
 ```ts
@@ -122,6 +114,7 @@ isWritable(path)
 ## 💡 | Example
 
 Input:
+
 ```js
 // src/test.js
 function some (num1, num2) {
@@ -148,6 +141,7 @@ func2('ArrowFunctionExpression')
 ```
 
 Output:
+
 ```sh
 #!/bin/bash
 

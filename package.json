@@ -1,16 +1,16 @@
 {
   "name": "js-to-sh",
   "description": "Turn javascript code into shellscript",
-  "version": "1.1.8",
+  "version": "1.1.9",
   "main": "dist/cjs/index.js",
   "module": "dist/mjs/index.js",
   "types": "dist/types/index.d.ts",
   "typings": "dist/types/index.d.ts",
   "type": "module",
   "bin": {
-    "tjss": "dist/cjs/cli.js",
-    "transpiler-js-shell": "dist/cjs/cli.js",
-    "js-to-sh": "dist/cjs/cli.js"
+    "tjss": "dist/cjs/index.js",
+    "transpiler-js-shell": "dist/cjs/index.js",
+    "js-to-sh": "dist/cjs/index.js"
   },
   "typesVersions": {
     "*": {
@@ -29,9 +29,9 @@
       "require": "./dist/cjs/index.js"
     },
     "./globals": {
-      "types": "./dist/types/types/index.d.ts",
-      "import": "./dist/types/types/index.d.ts",
-      "require": "./dist/types/types/index.d.js"
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/types/index.d.ts",
+      "require": "./dist/types/index.d.js"
     },
     "./loader": {
       "types": "./dist/types/index.d.ts",
@@ -43,10 +43,10 @@
     "node": ">=20"
   },
   "scripts": {
-    "cli": "tsx src/cli.ts",
+    "cli": "bun src/cli.ts",
     "test": "tsx test/app.ts && chmod 777 output/*",
     "build": "rimraf dist && npm run build:tsup && npm run build:dts && ./fixup.sh && cp -R src/transformers/shellscript dist/transformers",
-    "build:tsup": "npx tsx build.ts",
+    "build:tsup": "bun build/build.ts",
     "build:dts": "mkdir dist/types && ./node_modules/.bin/dts-bundle-generator -o dist/types/index.d.ts --verbose --no-check --sort --external-imports=meriyah --external-types=meriyah --external-inlines=meriyah -- src/index.ts",
     "lint": "eslint -c eslint.config.js"
   },
@@ -72,22 +72,23 @@
   },
   "homepage": "https://github.com/Ashu11-A/Transpiler-JS-Shell",
   "dependencies": {
-    "@loggings/beta": "^2.0.0",
+    "@loggings/beta": "^2.3.0",
     "abstract-syntax-tree": "^2.22.0",
     "glob": "^11.0.0"
   },
   "devDependencies": {
-    "@eslint/js": "^9.9.0",
-    "@types/node": "^22.2.0",
+    "@eslint/js": "^9.11.1",
+    "@types/node": "^22.7.4",
+    "chokidar": "^4.0.1",
     "dts-bundle-generator": "^9.5.1",
-    "eslint": "^9.9.0",
+    "eslint": "^9.11.1",
     "globals": "^15.9.0",
     "meriyah": "^5.0.0",
     "rimraf": "^6.0.1",
     "tsc-alias": "^1.8.10",
-    "tsup": "^8.2.4",
-    "tsx": "^4.17.0",
-    "typescript": "^5.5.4",
-    "typescript-eslint": "^8.0.1"
+    "tsup": "^8.3.0",
+    "tsx": "^4.19.1",
+    "typescript": "^5.6.2",
+    "typescript-eslint": "^8.7.0"
   }
 }

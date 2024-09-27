@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "lib": ["ESNext", "DOM"],
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
     "target": "ESNext",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
@@ -15,10 +15,11 @@
     "noUnusedParameters": true,
     "noImplicitReturns": true,
     "allowJs": true,
+    "verbatimModuleSyntax": true,
 
     "outDir": "./dist",
     "typeRoots": ["src/types/**/*.d.ts"]
   },
-  "include": ["src", "test"],
+  "include": ["src", "test", "build"],
   "exclude": ["node_modules", "dist"]
 }

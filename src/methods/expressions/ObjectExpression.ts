@@ -1,16 +1,14 @@
-import { Transpiler } from '../class/transpiler.js'
-import { Expression, ObjectExpression } from '../../node_modules/meriyah/src/estree.js'
+import { Method } from '../../class/methods.js'
+import { Transpiler } from '../../class/transpiler.js'
+import type { Expression } from '../../../node_modules/meriyah/src/estree.js'
+
 
 type Properties = 'url' | 'method' | 'headers' | 'body' | 'redirect' | 'referrer' | 'credentials'
 
-export class ParseFetch {
-  public AST: ObjectExpression
-  constructor (AST: ObjectExpression) {
-    this.AST = AST
-  }
-
-  parserProperties () {
-    const properties =  this.AST.properties.map((property) => Transpiler.parseObjectLiteralElementLike(property) as [Properties, string, Expression['type']])
+new Method({
+  type: 'ObjectExpression',
+  parser(node, options) {
+    const properties =  node.properties.map((property) => options.subprocess(property.type, property) as [Properties, string, Expression['type']])
       .map(([property, value, type]) => [property, Transpiler.parseReturnString(type, value)])
     const ordering: (string | undefined)[] = []
     const code: string[] = []
@@ -53,4 +51,4 @@ export class ParseFetch {
 
     return code.join(' ')
   }
-}
+})

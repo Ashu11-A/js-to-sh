@@ -14,8 +14,7 @@ const files = await glob(['**/*.js'], { cwd: path })
 
 for (const file of files) {
   const pathFile = join(path, file)
-  const AST = await new Transpiler({ path: pathFile, debug: true }).loader()
-  const output = Transpiler.parser(AST)
+  const output = new Transpiler({ path: pathFile, debug: true }).parser()
 
   if (!existsSync('output')) await mkdir('output')
   await writeFile(`output/${file.replace('tests/', '').replace('.js', '.sh')}`, output)

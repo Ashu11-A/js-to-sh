@@ -1,19 +1,25 @@
-import { Transpiler } from '../class/transpiler.js'
-import { breakLines } from '../libs/breakLines.js'
-import { getTabs } from '../libs/getTabs.js'
 import { Colors } from '@loggings/beta'
-import { AssignmentExpression, ClassBody, ClassDeclaration, FunctionExpression, MethodDefinition, NewExpression } from '../../node_modules/meriyah/src/estree.js'
+import { type AssignmentExpression, type ClassBody, type ClassDeclaration, type FunctionExpression, type MethodDefinition } from '../../../node_modules/meriyah/src/estree.js'
+import { Method } from '../../class/methods.js'
+import { Transpiler } from '../../class/transpiler.js'
+import { breakLines } from '../../libs/breakLines.js'
+import { getTabs } from '../../libs/getTabs.js'
+import type { ASTMap, MethodProps, MethodTypes } from '../../types/methods.js'
+
+new Method({
+  type: 'ClassDeclaration',
+  parser(expression, options) { return new ParserClass(expression, options).parseClassDeclaration()}
+})
 
 export class ParserClass {
   static all = new Map<string, ParserClass>() // será usado em parseVariableDeclaration
   AST: ClassDeclaration
   className: string
-  // methodNames: string[]
-  constant!: string // setá definido em parseVariableDeclaration
+  constant: string = '' // setá definido em parseVariableDeclaration
   variables: string[]
   uuid: string = crypto.randomUUID().replaceAll('-', '')
 
-  constructor (AST: ClassDeclaration) {
+  constructor (AST: ClassDeclaration, public options: MethodProps<'ClassDeclaration', undefined> & { subprocess<T extends MethodTypes, D>(methodType: T, node: ASTMap[T], data?: D): string | string[] }) {
     this.AST = AST
     this.className = this.getClassName(this.AST)
     this.variables = this.getVariables(this.AST)
@@ -21,7 +27,11 @@ export class ParserClass {
   }
 
   private getClassName (classs: ClassDeclaration) {
-    const className = Transpiler.parseExpression(classs.id) as string
+    if (classs.id === null) {
+      throw new Error('[getClassName] classs.id is null')
+    }
+  
+    const className = this.options.subprocess(classs.id.type, classs.id) as string
     return className
   }
 
@@ -71,7 +81,7 @@ export class ParserClass {
    * @returns {string[]}
    */
   parseClassFunctionExpression (expression: FunctionExpression): string[] {
-    const values = expression.params.map((param) => Transpiler.parseExpression(param)) as string[]
+    const values = expression.params.map((param) => this.options.subprocess(param.type, param)) as string[]
     return values
   }
 
@@ -106,12 +116,17 @@ export class ParserClass {
   parseClassMethodDefinition (element: MethodDefinition) {
     const code: string[] = []
     const variables: string[] = []
-    const key = Transpiler.parseExpression(element.key)
+  
+    if (element.key === null) {
+      throw new Error('[parseClassMethodDefinition] element.key is null')
+    }
+
+    const key = this.options.subprocess(element.key.type, element.key)
     let elements = 2
   
     switch (element.kind) {
     case 'method': {
-      const result = Transpiler.parseExpression(element.value) as string
+      const result = this.options.subprocess(element.value.type, element.value) as string
   
       code.push(`${getTabs(Transpiler.tabs)}function (CLASS)${key} {`)
       Transpiler.tabs++
@@ -152,32 +167,10 @@ export class ParserClass {
    * @param {AssignmentExpression} expression
    */
   parseAssignmentExpression (expression: AssignmentExpression) {
-    const right = Transpiler.parseExpression(expression.right)
+    const right = this.options.subprocess(expression.right.type, expression.right)
     // const left = this.parseExpression(expression.left) // MemberExpression
     // const operador = this.parseOperator(expression.operator)
   
     return `${getTabs(Transpiler.tabs)}${right}`
-  }
-  
-  /**
-   * Estrutura a classe
-   * 
-   * Input: const pessoa = new Pessoa('Matheus', '18')
-   * 
-   * Output:
-   * pessoa="pessoa"
-   * Pessoa_new $pessoa "Matheus" 18
-   *
-   * @param {NewExpression} expression
-   * @returns {string}
-   */
-  static parseNewExpression (expression: NewExpression): string {
-    const className = Transpiler.parseExpression(expression.callee) as string
-    const args = expression.arguments.map((arg) => Transpiler.parseReturnString(arg.type, Transpiler.parseExpression(arg) as string))
-
-    /**
-     * (ARG): será substituido em parseVariableDeclaration, lá será definido o this.constant dessa class (ParserClass)
-     */
-    return `${className}_new (ARG) ${args.join(' ')}`
   }
 }

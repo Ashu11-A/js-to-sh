@@ -1,5 +1,5 @@
-import { Arg } from '../types/args.js'
 import { Colors } from '@loggings/beta'
+import type { Arg } from '../types/args.js'
 
 export class Args {
   static args: Arg[] = []
