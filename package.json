@@ -72,23 +72,23 @@
   },
   "homepage": "https://github.com/Ashu11-A/Transpiler-JS-Shell",
   "dependencies": {
-    "@loggings/beta": "^2.3.0",
+    "@loggings/beta": "^2.4.0",
     "abstract-syntax-tree": "^2.22.0",
     "glob": "^11.0.0"
   },
   "devDependencies": {
-    "@eslint/js": "^9.11.1",
-    "@types/node": "^22.7.4",
+    "@eslint/js": "^9.16.0",
+    "@types/node": "^22.10.2",
     "chokidar": "^4.0.1",
     "dts-bundle-generator": "^9.5.1",
-    "eslint": "^9.11.1",
-    "globals": "^15.9.0",
-    "meriyah": "^5.0.0",
+    "eslint": "^9.16.0",
+    "globals": "^15.13.0",
+    "meriyah": "^6.0.3",
     "rimraf": "^6.0.1",
     "tsc-alias": "^1.8.10",
-    "tsup": "^8.3.0",
-    "tsx": "^4.19.1",
-    "typescript": "^5.6.2",
-    "typescript-eslint": "^8.7.0"
+    "tsup": "^8.3.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.18.0"
   }
 }

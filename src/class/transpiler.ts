@@ -5,7 +5,7 @@ import { breakLines } from '../libs/breakLines.js'
 import AbstractSyntaxTree from 'abstract-syntax-tree'
 import { readFileSync } from 'fs'
 import { join } from 'path'
-import type { Expression, PrivateIdentifier, Program } from '../../node_modules/meriyah/src/estree.js'
+import type { Expression, PrivateIdentifier, Program } from '../../node_modules/meriyah/dist/src/estree.js'
 import { Method } from './methods.js'
 
 interface TransformOptions {

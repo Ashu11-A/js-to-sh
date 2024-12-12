@@ -3,7 +3,7 @@ import { Method } from '../../class/methods.js'
 import { Transpiler } from '../../class/transpiler.js'
 import { getTransformers } from '../../loader.js'
 import { basename } from 'path'
-import { type Expression, type MemberExpression, type SpreadElement } from '../../../node_modules/meriyah/src/estree.js'
+import type {  Expression, MemberExpression, SpreadElement } from '../../../node_modules/meriyah/dist/src/estree.js'
 
 /**
  * Formata chamadas de funções junto com suas args

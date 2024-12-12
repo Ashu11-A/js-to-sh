@@ -1,5 +1,5 @@
 import { Method } from '../../class/methods.js'
-import type { Expression, PrivateIdentifier } from '../../../node_modules/meriyah/src/estree.js'
+import type { Expression, PrivateIdentifier } from '../../../node_modules/meriyah/dist/src/estree.js'
 import { Colors } from '@loggings/beta'
 
 /**

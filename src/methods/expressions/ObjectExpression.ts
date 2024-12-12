@@ -1,6 +1,6 @@
 import { Method } from '../../class/methods.js'
 import { Transpiler } from '../../class/transpiler.js'
-import type { Expression } from '../../../node_modules/meriyah/src/estree.js'
+import type { Expression } from '../../../node_modules/meriyah/dist/src/estree.js'
 
 
 type Properties = 'url' | 'method' | 'headers' | 'body' | 'redirect' | 'referrer' | 'credentials'

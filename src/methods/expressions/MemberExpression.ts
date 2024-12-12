@@ -1,5 +1,5 @@
 import { Colors } from '@loggings/beta'
-import type { Expression, Identifier, PrivateIdentifier } from '../../../node_modules/meriyah/src/estree.js'
+import type { Expression, Identifier, PrivateIdentifier } from '../../../node_modules/meriyah/dist/src/estree.js'
 import { Method } from '../../class/methods.js'
 import { Transpiler } from '../../class/transpiler.js'
 import { breakLines } from '../../libs/breakLines.js'

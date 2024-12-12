@@ -1,5 +1,5 @@
 import { Colors } from '@loggings/beta'
-import { type AssignmentExpression, type ClassBody, type ClassDeclaration, type FunctionExpression, type MethodDefinition } from '../../../node_modules/meriyah/src/estree.js'
+import type { AssignmentExpression, ClassBody, ClassDeclaration, FunctionExpression, MethodDefinition } from '../../../node_modules/meriyah/dist/src/estree.js'
 import { Method } from '../../class/methods.js'
 import { Transpiler } from '../../class/transpiler.js'
 import { breakLines } from '../../libs/breakLines.js'
