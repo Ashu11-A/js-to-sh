@@ -4,7 +4,8 @@
       "module": "commonjs",
       "moduleResolution": "Node",
       "target": "es2015",
-      "rootDir": "src"
+      "rootDir": "src",
+      "skipLibCheck": true
    },
    "exclude": ["test", "build"]
 }

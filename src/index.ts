@@ -1,5 +1,3 @@
-
-/* Start Generate By Build */
 import './methods/expressions/ArrayExpression.ts'
 import './methods/expressions/ArrowFunctionExpression.ts'
 import './methods/expressions/AwaitExpression.ts'
@@ -27,7 +25,6 @@ import './methods/statements/ImportDeclaration.ts'
 import './methods/statements/ReturnStatement.ts'
 import './methods/statements/SwitchStatement.ts'
 import './methods/statements/VariableDeclaration.ts'
-/* End Generate By Build */
 
 import './cli.js'
 import './transformers/index.js'

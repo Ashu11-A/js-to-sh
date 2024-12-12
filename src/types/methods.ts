@@ -16,6 +16,4 @@ export type MethodProps<T extends MethodTypes, D = undefined> = {
     parser: (node: ASTMap[T], options: MethodProps<T, D> & { subprocess<T extends MethodTypes, D>(methodType: T, node: ASTMap[T], data?: D): string | string[] }) => string | string[]
 }
 
-/* Start Generate By Build */
-export type ExistsMethods = ASTMap['ArrayExpression' | 'ArrowFunctionExpression' | 'AwaitExpression' | 'BinaryExpression' | 'CallExpression' | 'ClassDeclaration' | 'FunctionExpression' | 'Identifier' | 'Literal' | 'MemberExpression' | 'MetaProperty' | 'NewExpression' | 'ObjectExpression' | 'PrivateIdentifier' | 'TemplateLiteral' | 'Property' | 'BlockStatement' | 'BreakStatement' | 'ElseStatement' | 'ExpressionStatement' | 'ForOfStatement' | 'FunctionDeclaration' | 'IfStatement' | 'ImportDeclaration' | 'ReturnStatement' | 'SwitchStatement' | 'VariableDeclaration']['type']
-/* End Generate By Build */
+export type ExistsMethods = ASTMap['ArrayExpression' | 'ArrowFunctionExpression' | 'AwaitExpression' | 'BinaryExpression' | 'CallExpression' | 'ClassDeclaration' | 'FunctionExpression' | 'Identifier' | 'Literal' | 'MemberExpression' | 'MetaProperty' | 'NewExpression' | 'ObjectExpression' | 'PrivateIdentifier' | 'TemplateLiteral' | 'BlockStatement' | 'BreakStatement' | 'ElseStatement' | 'ExpressionStatement' | 'ForOfStatement' | 'FunctionDeclaration' | 'IfStatement' | 'ImportDeclaration' | 'ReturnStatement' | 'SwitchStatement' | 'VariableDeclaration' | 'Property']['type']

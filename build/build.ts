@@ -31,6 +31,7 @@ await build({
   platform: 'node',
   format: 'esm',
   entry: ['src/index.ts'],
+  cjsInterop: false,
   outDir: 'dist/mjs',
   tsconfig: './tsconfig.mjs.json',
   bundle: true,
