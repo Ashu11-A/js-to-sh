@@ -1,16 +1,16 @@
 {
   "name": "js-to-sh",
   "description": "Turn javascript code into shellscript",
-  "version": "1.2.0",
-  "main": "dist/cjs/index.js",
+  "version": "1.2.1",
+  "main": "dist/cjs/index.cjs",
   "module": "dist/mjs/index.js",
   "types": "dist/types/index.d.ts",
   "typings": "dist/types/index.d.ts",
   "type": "module",
   "bin": {
-    "tjss": "dist/cjs/index.js",
-    "transpiler-js-shell": "dist/cjs/index.js",
-    "js-to-sh": "dist/cjs/index.js"
+    "tjss": "dist/cjs/index.cjs",
+    "transpiler-js-shell": "dist/cjs/index.cjs",
+    "js-to-sh": "dist/cjs/index.cjs"
   },
   "typesVersions": {
     "*": {
@@ -26,7 +26,7 @@
     ".": {
       "types": "./dist/types/index.d.ts",
       "import": "./dist/mjs/index.js",
-      "require": "./dist/cjs/index.js"
+      "require": "./dist/cjs/index.cjs"
     },
     "./globals": {
       "types": "./dist/types/index.d.ts",
@@ -36,7 +36,7 @@
     "./loader": {
       "types": "./dist/types/index.d.ts",
       "import": "./dist/mjs/index.js",
-      "require": "./dist/cjs/index.js"
+      "require": "./dist/cjs/index.cjs"
     }
   },
   "engines": {
@@ -45,9 +45,7 @@
   "scripts": {
     "cli": "bun src/cli.ts",
     "test": "tsx test/app.ts && chmod 777 output/*",
-    "build": "rimraf dist && npm run build:tsup && npm run build:dts && ./fixup.sh && cp -R src/transformers/shellscript dist/transformers",
-    "build:tsup": "bun build/build.ts",
-    "build:dts": "mkdir dist/types && ./node_modules/.bin/dts-bundle-generator -o dist/types/index.d.ts --verbose --no-check --sort --external-imports=meriyah --external-types=meriyah --external-inlines=meriyah -- src/index.ts && bun build/types.ts",
+    "build": "rimraf dist && bun build/build.ts",
     "lint": "eslint -c eslint.config.js"
   },
   "keywords": [

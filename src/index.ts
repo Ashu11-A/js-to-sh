@@ -26,10 +26,10 @@ import './methods/statements/ReturnStatement.ts'
 import './methods/statements/SwitchStatement.ts'
 import './methods/statements/VariableDeclaration.ts'
 
-import './cli.js'
-import './transformers/index.js'
-
-export * from './class/index.js'
-export * from './libs/index.js'
-export * from './transformers/index.js'
 export * from './types/index.js'
+export * from './transformers/index.js'
+export * from './libs/index.js'
+export * from './class/index.js'
+
+import './transformers/index.js'
+import './cli.js'

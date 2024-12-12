@@ -6,7 +6,7 @@ import type {
   ObjectLiteralElement,
   ProgramStatement,
 } from '../../node_modules/@typescript-eslint/types/dist/generated/ast-spec.js'
-import { TypeExtractor } from '../lib/extractTypes.js'
+import { TypeExtractor } from '../lib/TypeExtractor.js'
 
 /**
  * Class responsible for analyzing TypeScript ASTs (Abstract Syntax Trees).
