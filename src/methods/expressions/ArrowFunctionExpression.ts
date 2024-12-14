@@ -21,10 +21,12 @@ new Method({
     const result = options.subprocess(expression.body.type, expression.body) as string
     const params = expression.params.map((param) => options.subprocess(param.type, param))
       
+    Transpiler.tabs++
     for (const [index, param] of Object.entries(params)) {
-      code.push(getTabs(Transpiler.tabs) + `local ${param}=$${Number(index) + 1}`)
+      code.push(`${getTabs(Transpiler.tabs)}local ${param}=$${Number(index) + 1}`)
     }
-        
+    Transpiler.tabs--
+
     code.push(result)
     
     return breakLines(code)

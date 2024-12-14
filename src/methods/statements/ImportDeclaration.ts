@@ -14,7 +14,7 @@ new Method({
   type: 'ImportDeclaration',
   parser(node, options) {
     const packagee = options.subprocess(node.type, node) as string
-    const path = dirname(resolve(Transpiler.options.path))
+    const path = dirname(resolve(Transpiler.options.sourcePath))
 
     if (!existsSync(join(path, packagee))) {
       throw new Error(Colors('red', `[${packagee}] It is not possible to use external or internal packages.`))

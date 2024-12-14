@@ -51,7 +51,7 @@ const code = new Map<string, string>();
         const files = await glob(`${content}/**/*.{js,ts}`, { cwd: process.cwd() })
 
         for (const file of files) {
-          const output = new Transpiler({ path: file, debug: false }).parser()
+          const output = new Transpiler({ sourcePath: file, debug: false }).parser()
           code.set(file.split('/').slice(1).join('/'), output)
         }
       },
@@ -64,7 +64,7 @@ const code = new Map<string, string>();
       hasString: true,
       async function(content) {
         if (content === undefined) throw new Error('File not expecificate')
-        const output = new Transpiler({ path: content, debug: JSON.parse(process.env['transpilerDebug'] ?? 'false') }).parser()
+        const output = new Transpiler({ sourcePath: content, debug: JSON.parse(process.env['transpilerDebug'] ?? 'false') }).parser()
         code.set(content, output)
       },
     },

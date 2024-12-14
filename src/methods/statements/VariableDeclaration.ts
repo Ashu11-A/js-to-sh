@@ -1,9 +1,8 @@
-import { Colors } from '@loggings/beta'
 import type { AwaitExpression } from '../../../node_modules/meriyah/dist/src/estree.js'
+import { ClassMemory } from '../../class/ClassMemory.js'
 import { Method } from '../../class/methods.js'
 import { Transpiler } from '../../class/transpiler.js'
 import { breakLines } from '../../libs/breakLines.js'
-import { ParserClass } from '../expressions/ClassDeclaration.js'
 
 /**
  * Formata Declarações
@@ -33,13 +32,11 @@ new Method({
       // Veja parseNewExpression
       if (variableOutput.includes('(ARG)') && variable.init.type === 'NewExpression') {
         const className = options.subprocess(variable.init.callee.type, variable.init.callee) as string
-        const parserClass = ParserClass.all.get(className) as ParserClass
 
-        if (parserClass === undefined) {
-          console.debug(Colors('red', `[${className}] Not implemented`))
-        } else {
-          parserClass.constant = variableName
-        }
+        new ClassMemory({
+          name: className,
+          constant: variableName
+        })
 
         code.push(`\n${variableName}="${className}_${crypto.randomUUID().replaceAll('-', '')}"`)
         code.push((intNode as string).replaceAll('(ARG)', `$${variableName}`) + '\n')

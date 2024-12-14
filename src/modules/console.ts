@@ -12,9 +12,7 @@ export class Console {
   static tabs: number = 0
 
   constructor(options: ConsoleOptions) {
-    this.options = Object.assign(options, {
-      variable: options.variable?.replaceAll('"', '') ?? undefined
-    })
+    this.options = options
   }
 
   parse(): string {

@@ -16,8 +16,10 @@ import { Console } from '../../modules/console.js'
 new Method<'MemberExpression', Map<string, string>>({
   type: 'MemberExpression',
   parser(expression, options) {
-    const variables = Array.from(options.data?.entries() ?? [])
-  
+    const variables = options.data
+    const contents = Array.from(variables?.entries() ?? [])
+    const keys = Array.from(variables?.keys() ?? [])
+
     if (expression.object.type === 'MetaProperty') {
       return options.subprocess<typeof expression.object.type, Expression | PrivateIdentifier>(
         expression.object.type,
@@ -49,7 +51,7 @@ new Method<'MemberExpression', Map<string, string>>({
     })
       
     if (isClass) {
-      code.push(`"$${object}"_${property} ${(variables.map(([literals]) => literals)).join(' ').trim()}`)
+      code.push(`"$${object}"_${property} ${keys.join(' ').trim()}`)
       return breakLines(code)
     }
 
@@ -57,7 +59,8 @@ new Method<'MemberExpression', Map<string, string>>({
     case 'console': {
       code.push(new Console({
         methodName: property,
-        variable: (variables.map(([, content]) => `${content}`)).join(' ').trim() }).parse())
+        variable: contents.map(([content, variable]) => `${content} $${variable}`).join(' ').trim()
+      }).parse())
       break
     }
     default: {

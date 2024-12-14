@@ -20,6 +20,6 @@
     "outDir": "./dist",
     "typeRoots": ["src/types/**/*.d.ts"]
   },
-  "include": ["src", "test", "build"],
+  "include": ["src", "test", "build", "test/modules/class.js", "test/modules/console.js", "test/modules/functions.js", "test/modules/loop.js", "test/modules/map.js", "test/modules/path.js", "test/modules/RootPath.js", "test/modules/transformes.js", "test/modules/set.js"],
   "exclude": ["node_modules", "dist"]
 }

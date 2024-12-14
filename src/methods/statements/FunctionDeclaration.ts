@@ -25,7 +25,7 @@ new Method({
     const functionName = options.subprocess(node.id?.type, node.id) as string
 
 
-    code.push(`function ${getTabs(Transpiler.tabs)}${functionName}() {`)
+    code.push(`${getTabs(Transpiler.tabs)}function ${functionName}() {`)
 
     Transpiler.tabs++
     for (const [index, param] of Object.entries(params)) {

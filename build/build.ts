@@ -5,7 +5,7 @@ import { Watcher } from './class/Watcher.js'
 import { TypeExtractor } from './lib/TypeExtractor.js'
 import { WatcherTypes } from './types/WatcherTypes.js'
 import { generateDtsBundle } from 'dts-bundle-generator'
-import { cp, mkdir, writeFile } from 'fs/promises'
+import { cp, mkdir, readFile, writeFile } from 'fs/promises'
 
 const activeProcesses = new Map<string, NodeJS.Timeout>()
 
@@ -99,6 +99,16 @@ const executeBuildProcess = async () => {
 
   await writeFile('dist/cjs/package.json', JSON.stringify({ type: 'commonjs' }, null, 2))
   await writeFile('dist/mjs/package.json', JSON.stringify({ type: 'module' }, null, 2))
+
+  const filePaths = ['dist/mjs/index.js','dist/cjs/index.cjs' ]
+  for (const path of filePaths) {
+    const code: string[] = []
+
+    code.push('#!/usr/bin/env node')
+    code.push(await readFile(path, { encoding: 'utf8' }))
+
+    await writeFile(path, code.join('\n'), { encoding: 'utf-8' })
+  }
 
   const dtsPath = join(process.cwd(), 'dist/types/index.d.ts')
   const dtsCode = generateDtsBundle([{

@@ -5,9 +5,9 @@ class Pessoa {
   }
 
   cumprimentar() {
-    return `Olá, meu nome é ${this.nome} e eu tenho ${this.idade} anos.`
+    return `Hello, my name is ${this.nome} and I'm ${this.idade} years old`
   }
 }
 
-const pessoa = new Pessoa('Matheus', '18')
+const pessoa = new Pessoa('Matheus', '19')
 console.log(pessoa.cumprimentar())

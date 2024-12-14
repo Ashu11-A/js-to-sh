@@ -8,22 +8,23 @@ import { join } from 'path'
 import type { Expression, PrivateIdentifier, Program } from '../../node_modules/meriyah/dist/src/estree.js'
 import { Method } from './methods.js'
 
-interface TransformOptions {
-  path: string
+type TransformOptions = {
+  removeComments?: boolean
+  sourcePath: string
   cwd?: string
   debug?: boolean
 }
 
 export class Transpiler {
+  public ast: Program
   static tabs: number = 0
   static options: TransformOptions
-  static globalDeclarations: Record<string, string> = {}
-  public ast: Program
+  static globalDeclarations = new Map<string, string>()
 
   constructor(options: TransformOptions) {
     Transpiler.options = {
       ...options,
-      path: join(options.cwd ?? '', options.path)
+      sourcePath: join(options.cwd ?? '', options.sourcePath)
     }
 
     this.ast = Transpiler.loader()
@@ -32,7 +33,7 @@ export class Transpiler {
     global.loggings.config({ format: '{message}', level: Transpiler.options?.debug ? 'debug' : 'info' })
 
     console.debug(Rgb(249, 248, 113) + 'Debug Mode!')
-    console.debug(Rgb(132, 94, 194) + 'Transpiling:', Rgb(255, 199, 95) + Transpiler.options.path)
+    console.debug(Rgb(132, 94, 194) + 'Transpiling:', Rgb(255, 199, 95) + Transpiler.options.sourcePath)
   }
 
   /**
@@ -42,33 +43,52 @@ export class Transpiler {
    * @returns {Promise<(Program)>}
    */
   static loader(code?: string): Program {
-    if (code === undefined) code = readFileSync(Transpiler.options.path, { encoding: 'utf-8' })
+    if (code === undefined) code = readFileSync(Transpiler.options.sourcePath, { encoding: 'utf-8' })
     const AST = new AbstractSyntaxTree(code)
     return AST
   }
 
-  parser (ast?: (Program)) {
-    const code: string[] = []
+  parser(ast?: Program) {
     ast = ast ?? this.ast
-
-    code.push('#!/bin/bash\n')
-
+    let output: string[] = []
+  
     for (const body of ast.body) {
       const method = Method.all.get(body.type)
-      
-      if (method === undefined) { console.debug(Rgb(255, 220, 0) + `[${body.type}] ` + Colors('red', 'Not defined')); continue }
-      const source = method.interaction.parser(body, { type: method.interaction.type, parser: method.interaction.parser, subprocess: method.subprocess }) as string
-
-      for (const [, codeSource] of Object.entries(Transpiler.globalDeclarations)) {
-        code.push(codeSource)
+  
+      if (!method) {
+        console.debug(Rgb(255, 220, 0) + `[${body.type}] ` + Colors('red', 'Not defined'))
+        continue
       }
   
-      Transpiler.globalDeclarations = {}
-      code.push(source)
+      const source = method.interaction.parser(body, {
+        type: method.interaction.type,
+        parser: method.interaction.parser,
+        subprocess: method.subprocess
+      }) as string
+  
+      output.push(source)
+    }
+  
+    const globalDeclarations = Array.from(Transpiler.globalDeclarations.values())
+    Transpiler.globalDeclarations.clear()
+    
+    output.unshift(...globalDeclarations)
+
+    if (Transpiler.options.removeComments) {
+      output = output.map((content) => {
+        const array = content.split('\n')
+        for (const [index, value] of Object.entries(array)) {
+          array[Number(index)] = (value.trim()).startsWith('#') ? '(REMOVE)' : value
+        }
+        return array.filter((line) => line !== '(REMOVE)').join('\n')
+      })
     }
 
-    return breakLines(code)
+    output.unshift('#!/bin/bash\n')
+  
+    return breakLines(output)
   }
+  
 
   /**
    * Retorna o operador equivalente do javascript para o shell script
@@ -100,16 +120,27 @@ export class Transpiler {
    * @param {(string | string[])} content
    * @returns {string}
    */
-  static parseReturnString(type: Expression['type'] | PrivateIdentifier['type'], content: string | string[]): string {
+  static parseReturnString(type: Expression['type'] | PrivateIdentifier['type'], content: string | string[] | boolean | number): string {
+    console.log(type)
+    console.log(content)
+    content = Array.isArray(content)
+      ? content.map((value) => String(value).trim())
+      : typeof content === 'boolean'
+        ? (content === true ? '0' : '1')
+        : typeof content === 'number'
+          ? content
+          : content.trim()
+
     switch (type) {
     // Identifier são constantes: const num = 0
     case 'Identifier': return `"$${content}"`
       // Literal são strings ou numbers
     case 'Literal': return !Number.isNaN(Number(content)) ? `${content}` : `"${content}"`
-    case 'CallExpression': return `$(${content})`
+    case 'CallExpression': return `$(eval ${content})`
     case 'ArrayExpression': return `(${(content as string[]).join(' ')})`
     case 'ArrowFunctionExpression': return `${content}`
     case 'ObjectExpression': return `${content}`
+    // case 'MemberExpression': return `$(${content})`
     }
 
     // console.debug(Colors('red', `[parseReturnString] Not identified: ${type} ${content}`))

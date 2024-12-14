@@ -1,176 +1,164 @@
 import { Colors } from '@loggings/beta'
-import type { AssignmentExpression, ClassBody, ClassDeclaration, FunctionExpression, MethodDefinition } from '../../../node_modules/meriyah/dist/src/estree.js'
+import type {
+  AssignmentExpression,
+  ClassBody,
+  ClassDeclaration,
+  FunctionExpression,
+  MethodDefinition
+} from '../../../node_modules/meriyah/dist/src/estree.js'
 import { Method } from '../../class/methods.js'
 import { Transpiler } from '../../class/transpiler.js'
 import { breakLines } from '../../libs/breakLines.js'
 import { getTabs } from '../../libs/getTabs.js'
 import type { ASTMap, MethodProps, MethodTypes } from '../../types/methods.js'
 
+// Registering the class parsing method
 new Method({
   type: 'ClassDeclaration',
-  parser(expression, options) { return new ParserClass(expression, options).parseClassDeclaration()}
+  parser(expression, options) {
+    return new ParserClass(expression, options).parseClassDeclaration()
+  }
 })
 
 export class ParserClass {
   static all = new Map<string, ParserClass>() // será usado em parseVariableDeclaration
   AST: ClassDeclaration
   className: string
-  constant: string = '' // setá definido em parseVariableDeclaration
   variables: string[]
-  uuid: string = crypto.randomUUID().replaceAll('-', '')
+  uuid = crypto.randomUUID().replaceAll('-', '')
 
-  constructor (AST: ClassDeclaration, public options: MethodProps<'ClassDeclaration', undefined> & { subprocess<T extends MethodTypes, D>(methodType: T, node: ASTMap[T], data?: D): string | string[] }) {
+  constructor(
+    AST: ClassDeclaration,
+    public options: MethodProps<'ClassDeclaration', undefined> & {
+      subprocess<T extends MethodTypes, D>(
+        methodType: T,
+        node: ASTMap[T],
+        data?: D
+      ): string | string[];
+    }
+  ) {
     this.AST = AST
     this.className = this.getClassName(this.AST)
     this.variables = this.getVariables(this.AST)
-    ParserClass.all.set(this.className, this)
   }
 
-  private getClassName (classs: ClassDeclaration) {
-    if (classs.id === null) {
-      throw new Error('[getClassName] classs.id is null')
-    }
-  
-    const className = this.options.subprocess(classs.id.type, classs.id) as string
-    return className
-  }
-
-  private getVariables (classs: ClassDeclaration) {
-    const variables: string[] = []
-
-    for (const node of classs.body.body) {
-      if (node.type ===  'MethodDefinition') {
-        const module = (node as MethodDefinition)
-
-        const { variables: variablesArray } = this.parseClassMethodDefinition(module)
-        variables.push(...variablesArray)
-      }
+  private getClassName(classDecl: ClassDeclaration): string {
+    if (!classDecl.id) {
+      throw new Error('[getClassName] classDecl.id is null')
     }
 
-    return variables
+    return this.options.subprocess(classDecl.id.type, classDecl.id) as string
   }
 
-  parseClassDeclaration () {
+  private getVariables(classDecl: ClassDeclaration): string[] {
+    return classDecl.body.body
+      .filter((node) => node.type === 'MethodDefinition')
+      .flatMap((node) => this.parseClassMethodDefinition(node as MethodDefinition).variables)
+  }
+
+  parseClassDeclaration(): string {
     const code: string[] = []
+
     Transpiler.tabs++
-    const regexConstructor = /START_CONSTRUCTOR([\s\S]*?)END_CONSTRUCTOR/g
 
-    code.push(`\n${getTabs(Transpiler.tabs -1)}function ${this.className}_new () {`)
-    code.push(`${getTabs(Transpiler.tabs)}local self=$1`)
-
-    const match = regexConstructor.exec((this.parseClassBody(this.AST.body) as string))?.[1].trim()
-    code.push(match ? getTabs(Transpiler.tabs) + match : '')
+    code.push(
+      `\n${getTabs(Transpiler.tabs - 1)}new_${this.className} () {`,
+      `${getTabs(Transpiler.tabs)}local self=$1`
+    )
     
+    const methods = this.parseClassBody(this.AST.body) as string
+    
+    code.push(methods)
     Transpiler.tabs--
     code.push(`${getTabs(Transpiler.tabs)}}`)
-
-    const methods = this.parseClassBody(this.AST.body) as string
-    const formated = methods
-      .replace(regexConstructor, '')
-      .replaceAll('(CLASS)', this.className + '_').toString()
-      .replaceAll('local self=$1', `local self=$1\n${this.variables.map((variable) => `${getTabs(Transpiler.tabs + 1)}local ${variable}=$(eval echo \\$$$self"_${variable}")\n`).join('')}`)
-
-    code.push(formated)
     return breakLines(code)
   }
 
-  /**
-   * As classes precisam de uma formatação muito especifica, então parseFunctionExpression não funcionaria
-   *
-   * @param {FunctionExpression} expression
-   * @returns {string[]}
-   */
-  parseClassFunctionExpression (expression: FunctionExpression): string[] {
-    const values = expression.params.map((param) => this.options.subprocess(param.type, param)) as string[]
-    return values
-  }
-
-  parseClassBody(classs: ClassBody) {
+  private parseClassBody(classBody: ClassBody): string {
     const code: string[] = []
-    for (const element of classs.body) {
-      switch (element.type) {
-      case 'FunctionExpression': {
 
-        break
-      }
-      case 'MethodDefinition': {
-        const { code: codeString } = this.parseClassMethodDefinition(element as MethodDefinition)
-        code.push(codeString)
-        break
-      }
-      // case 'PropertyDefinition': {
-      //   break
-      // }
-      // case 'StaticBlock': {
-      //   break
-      // }
-      default: {
-        console.debug(Colors('red', `[parseClassBody] ${element.type}`))
-      }
+    for (const element of classBody.body) {
+      if (element.type === 'MethodDefinition') {
+        code.push(
+          this.parseClassMethodDefinition(element as MethodDefinition).code
+        )
+      } else {
+        console.debug(Colors('red', `[parseClassBody] Unsupported type: ${element.type}`))
       }
     }
 
     return breakLines(code)
   }
 
-  parseClassMethodDefinition (element: MethodDefinition) {
+  private parseClassMethodDefinition(element: MethodDefinition) {
     const code: string[] = []
     const variables: string[] = []
-  
-    if (element.key === null) {
-      throw new Error('[parseClassMethodDefinition] element.key is null')
-    }
 
+    if (!element.key) throw new Error('[parseClassMethodDefinition] element.key is null')
     const key = this.options.subprocess(element.key.type, element.key)
-    let elements = 2
-  
-    switch (element.kind) {
-    case 'method': {
-      const result = this.options.subprocess(element.value.type, element.value) as string
-  
-      code.push(`${getTabs(Transpiler.tabs)}function (CLASS)${key} {`)
-      Transpiler.tabs++
-      code.push(`${getTabs(Transpiler.tabs)}local self=$1`)
-      code.push(`${getTabs(Transpiler.tabs)}${result}`)
-      Transpiler.tabs--
-      code.push(`${getTabs(Transpiler.tabs)}}`)
-      break
-    }
-    case 'get': {
-      break
-    }
-    case 'set': {
-      break
-    }
-    case 'constructor': {
-      const values = this.parseClassFunctionExpression(element.value)
 
-      code.push('START_CONSTRUCTOR')
-      for (const variable of values) {
-        variables.push(variable)
-        code.push(`${getTabs(Transpiler.tabs)}eval "$self"_${variable}='$${elements++}'`)
-      }
-      code.push('END_CONSTRUCTOR')
-    }
+    switch (element.kind) {
+    case 'method':
+      this.generateMethodCode(element, key, code)
+      break
+
+    case 'constructor':
+      this.generateConstructorCode(element, variables, code)
+      break
+
+    default:
+      console.debug(Colors('yellow', `[parseClassMethodDefinition] Unsupported kind: ${element.kind}`))
     }
 
     return { code: breakLines(code), variables }
   }
-  
-  /**
-   * Usado para formatar variaveis dentro de classes
-   * 
-   * class Exemple {
-   *  public string = 'this'
-   * }
-   *
-   * @param {AssignmentExpression} expression
-   */
-  parseAssignmentExpression (expression: AssignmentExpression) {
-    const right = this.options.subprocess(expression.right.type, expression.right)
-    // const left = this.parseExpression(expression.left) // MemberExpression
-    // const operador = this.parseOperator(expression.operator)
-  
+
+  private generateMethodCode(
+    element: MethodDefinition,
+    key: string | string[],
+    code: string[]
+  ) {
+    const result = this.options.subprocess(
+      element.value.type,
+      element.value
+    ) as string
+
+    code.push(
+      `${getTabs(Transpiler.tabs)}eval "\${self}_${key}() {`,
+      `${getTabs(Transpiler.tabs + 1)}${result.replaceAll('"', '\\"')}`,
+      `${getTabs(Transpiler.tabs)}}"`
+    )
+  }
+
+  private generateConstructorCode(
+    element: MethodDefinition,
+    variables: string[],
+    code: string[]
+  ) {
+    const params = this.parseClassFunctionExpression(element.value)
+
+    for (const [index, param] of Object.entries(params)) {
+      const paramIndex = Number(index) + 2
+
+      variables.push(param)
+      code.push(
+        `${getTabs(Transpiler.tabs)}local ${param}=$${paramIndex}${params.length < paramIndex ? '\n' : ''}`,
+      )
+    }
+  }
+
+  private parseClassFunctionExpression(expression: FunctionExpression): string[] {
+    return expression.params.map((param) =>
+      this.options.subprocess(param.type, param)
+    ) as string[]
+  }
+
+  parseAssignmentExpression(expression: AssignmentExpression): string {
+    const right = this.options.subprocess(
+      expression.right.type,
+      expression.right
+    )
+
     return `${getTabs(Transpiler.tabs)}${right}`
   }
 }

@@ -1,5 +1,6 @@
 import { Method } from '../../class/methods.js'
 import { Transpiler } from '../../class/transpiler.js'
+import { getTabs } from '../../libs/getTabs.js'
 
 /**
  * Caso usado em functions isso ira formatar o return da função
@@ -31,6 +32,6 @@ new Method({
   
     const element = options.subprocess(node.argument.type, node.argument) as string
 
-    return `echo ${Transpiler.parseReturnString(node.argument.type ?? 'Literal', element)}`
+    return `${getTabs(Transpiler.tabs)}echo ${Transpiler.parseReturnString(node.argument.type ?? 'Literal', element)}`
   }
 })
